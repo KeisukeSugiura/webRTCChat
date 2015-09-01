@@ -11,8 +11,9 @@ io.sockets.on('connection', function(socket) {
     socket.join(roomname);
   });
 
-  socket.on('message', function(message) {
+  socket.on('signaling', function(message) {
     // 送信元のidをメッセージに追加（相手が分かるように）
+
     message.target.from = socket.id;
         // 送信先が指定されているか？
     
@@ -22,32 +23,36 @@ io.sockets.on('connection', function(socket) {
     if (target) {
 	　　// 送信先が指定されていた場合は、その相手のみに送信
       console.log(message.target.from+'  ----->  '+message.target.sendto+' ('+message.body.type+') ');
-      io.sockets.to(target).emit('message', message);
+      io.sockets.to(target).emit('signaling', message);
     return;
     }
 
 	// 特に指定がなければ、ブロードキャスト
   //
   console.log(message.target.from+'  emitMessage '+'('+message.body.type+')'); 
-  emitMessage('message', message);
+  emitMessage('signaling', message);
 
   
 });
 
   socket.on('disconnect', function(message) { 
     //console.log(message.target.from+'  emitMessage'); 
-    console.log(socket.id+' disconnected')
-    //emitMessage('user disconnected');
+    console.log(socket.id+' disconnected');
+    var sendObj={
+      body:{type:'user disconnected'},
+      target:{from:socket.id,sendto:null}
+    }
+    emitMessage('signaling',sendObj);
   });
 
   // 会議室名が指定されていたら、室内だけに通知
   function emitMessage(type, message) {
 
-    var roomname;
+    var roomname=message.target.roomName;
    // socket.get('roomname', function(err, _room) {  roomname = _room;  });
 
    if (roomname) { 
-     io.socket.broadcast.to(roomname).emit(type, message);   
+     socket.to(roomname).emit(type, message);   
    }
    else {
      socket.broadcast.emit(type, message);

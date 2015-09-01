@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>domManage</title>
+	<script src="jquery-1.11.3.min.js"></script>
+	<script src="jquery-ui-1.11.4/jquery-ui.min.js"></script>
+</head>
+<body>
+	<button id="generateButton" type="button">generate</button>
+	<div id="item_area" style="height:100%;width:100%;">
+
+	</div>
+</body>
+<script>
+$(function(){
+	var videoItems = new Array();
+
+	$('#generateButton').click(generateItem);
+
+	function generateItem(){
+		//itemを生成する
+		var newId = generateItemId(videoItems.length);
+		videoItems.push(newId);
+		var itemHtml = 
+		'<img id="'+newId+'"'+
+		'src="kirakira.png" style="width:200px;height:200px;position:absolute;">';
+		$('#item_area').append(itemHtml);
+		$('#'+newId).draggable();
+	};
+
+	function generateItemId(seed){
+		//itemに関連づけるIDの発行
+		//TODO 本来は相手のsocketIDを使えばいい
+		var newId = 'image'+String(seed);
+		if(isExistId(newId)){
+			return generateItemId(seed+1);
+		}else{
+			return newId;
+		}
+	}
+
+	function generateItemWithId(id){
+		var itemHtml = 
+		'<img id="'+id+'"'+
+		'src="kirakira.png" style="width:200px;height:200px;position:absolute;">';
+		$('#item_area').append(itemHtml);
+		$('#'+Id).draggable();
+		return document.getElementById(id);
+	}
+
+	function isExistId(id){
+		videoItems.forEach(function(value,index,arr){
+			if(value == id){
+				return true;
+			}
+		});
+		return false;
+	}
+
+	function deleteItem(id){
+		var newItem= new Array();
+		videoItems.forEach(function(value,index,arr){
+			if(value == id){
+
+			}else{
+				newitem.push(value);
+			}
+
+		});
+		videoItems=newItem;
+	}
+
+});
+</script>
+</html>

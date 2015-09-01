@@ -2,21 +2,26 @@
 <html>
 <head>
   <title>WebRTC 4</title>  
+  <script src="jquery-1.11.3.min.js"></script>
+  <script src="jquery-ui-1.11.4/jquery-ui.min.js"></script>
 </head>
 <body>
-  <button type="button" onclick="startVideo();">Start video</button>
-  <button type="button" onclick="stopVideo();">Stop video</button>
+ <!-- <button id="start_button" type="button">Start video</button>
+  <button id="stop_button" type="button">Stop video</button>
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <!-- <button type="button" onclick="connect();">Connect</button> -->
-  <button type="button" onclick="call();">Connect</button>
-  <button type="button" onclick="hangUp();">Hang Up</button>
+  <button type="button" onclick="connect();">Connect</button> 
+  <button id="call_button" type="button">Connect</button>
+  <button id="hangup_button" type="button">Hang Up</button>
+  -->
   <br />
   <div style="position: relative;">
    <video id="local-video" autoplay style="width: 240px; height: 180px; border: 1px solid black;"></video>
    <!-- <video id="remote-video" autoplay style="width: 240px; height: 180px; border: 1px solid black;"></video> -->
-   <video id="webrtc-remote-video-0" autoplay style="position: absolute; top: 250px; left: 0px; width: 320px; height: 240px; border: 1px solid black; "></video>
+  <!-- <video id="webrtc-remote-video-0" autoplay style="position: absolute; top: 250px; left: 0px; width: 320px; height: 240px; border: 1px solid black; "></video>
    <video id="webrtc-remote-video-1" autoplay style="position: absolute; top: 250px; left: 330px; width: 320px; height: 240px; border: 1px solid black; "></video>
    <video id="webrtc-remote-video-2" autoplay style="position: absolute; top: 0px; left: 330px; width: 320px; height: 240px; border: 1px solid black; " ></video>
+   -->
+   <div id="item_area"></div>
   </div>
   
   <!---
@@ -45,7 +50,8 @@
   <script src="http://133.68.112.180:9001/socket.io/socket.io.js"></script>
   
   <script>
-  var localVideo = document.getElementById('local-video');
+  $(function(){
+    var localVideo = document.getElementById('local-video');
   //var remoteVideo = document.getElementById('remote-video');
   var localStream = null;
   var mediaConstraints = {'mandatory': {'OfferToReceiveAudio':false, 'OfferToReceiveVideo':true }};
@@ -53,9 +59,15 @@
   // ---- multi people video & audio ----
   var videoElementsInUse = {};
   var videoElementsStandBy = {};
-  pushVideoStandBy(getVideoForRemote(0));
-  pushVideoStandBy(getVideoForRemote(1));
-  pushVideoStandBy(getVideoForRemote(2));
+  //$('#start_button').click(startVideo);
+  //$('#stop_button').click(stopVideo);
+  //$('#call_button').click(call);
+  //$('#hangup_button').click(hangUp);
+ // pushVideoStandBy(getVideoForRemote(0));
+  //pushVideoStandBy(getVideoForRemote(1));
+  //pushVideoStandBy(getVideoForRemote(2));
+  startVideo();
+  var roomName ="_defaultroom";
 
 
   function getVideoForRemote(index) {
@@ -89,9 +101,20 @@
     return element;
   }
 
+  function generateItemWithId(id){
+    var itemHtml = 
+    '<video id="'+id+'"'+
+    'autoplay style="top:250px;left:100px;width:320px;height:240px;border:1px solid black;position:absolute;">';
+    $('#item_area').append(itemHtml);
+    $('#'+id).draggable();
+    return document.getElementById(id);
+  }
+
   function attachVideo(id, stream) {
     console.log('try to attach video. id=' + id);
-    var videoElement = popVideoStandBy();
+    //TODO
+    //var videoElement = popVideoStandBy();
+    var videoElement=generateItemWithId(id);
     if (videoElement) {
       videoElement.src = window.URL.createObjectURL(stream);
       console.log("videoElement.src=" + videoElement.src);
@@ -110,7 +133,8 @@
       videoElement.pause();
       videoElement.src = "";
       console.log("videoElement.src=" + videoElement.src);
-      pushVideoStandBy(videoElement);
+      //pushVideoStandBy(videoElement);
+      $('#'+id).remove();
     }
     else {
       console.warn('warning --- no video element using with id=' + id);
@@ -247,15 +271,15 @@
   
   // socket: channel connected
   socket.on('connect', onOpened)
-        .on('message', onMessage);
+        .on('signaling', onMessage);
 
   function onOpened(evt) {
     console.log('socket opened.');
     socketReady = true;
 	
-    var roomname = getRoomName(); // 会議室名を取得する
-   socket.emit('enter', roomname);
-	console.log('enter to ' + roomname);
+    roomName = getRoomName(); // 会議室名を取得する
+   socket.emit('enter', roomName);
+	console.log('enter to ' + roomName);
   }
 
   // socket: accept connection request
@@ -274,7 +298,7 @@
 	  }
 
       if (isConnectPossible()) {
-        socket.json.send({target:{sendto:id,from:null},body:{type: "response"}});
+        socket.json.emit('signaling',{target:{sendto:id,from:null},body:{type: "response"}});
       }
       else {
 	    console.warn('max connections. so ignore call'); 
@@ -293,10 +317,10 @@
     } else if (evt.body.type === 'candidate' && isPeerStarted()) { // **
       console.log('Received ICE candidate...');
 	  onCandidate(evt);
-    } else if (evt.body.type === 'user dissconnected' && isPeerStarted()) { // **
+    } else if (evt.body.type === 'user disconnected' && isPeerStarted()) { // **
       console.log("disconnected");
       //stop();
-	  detachVideo(id); // force detach video
+	     detachVideo(id); // force detach video
       stopConnection(id);
     }
   }
@@ -393,7 +417,7 @@
 	//textForSendSDP.value = text;
 	
 	// send via socket
-	socket.json.send(sdp);
+	socket.json.emit('signaling',sdp);
   }
   
   function sendCandidate(candidate) {
@@ -404,7 +428,7 @@
 	//textForSendICE.scrollTop = textForSendICE.scrollHeight;
 	
 	// send via socket
-	socket.json.send(candidate);
+	socket.json.emit('signaling',candidate);
   }
   
   // ---------------------- video handling -----------------------
@@ -415,7 +439,8 @@
       localStream = stream;
       localVideo.src = window.webkitURL.createObjectURL(stream);
       localVideo.play();
-	  localVideo.volume = 0;
+	    localVideo.volume = 0;
+      call();
      },
      function (error) { // error
       console.error('An error occurred:');
@@ -576,13 +601,13 @@
 
     // call others, in same room
     console.log("call others in same room, befeore offer");
-    socket.json.send({target:{sendto:null,from:null},body:{type: "call"}});
+    socket.json.emit('signaling',{target:{sendto:null,from:null,roomName:roomName},body:{type: "call"}});
   }
   
   // stop the connection upon user request
   function hangUp() {
     console.log("Hang up.");
-    socket.json.send({target:{sendto:null,from:null},body:{type: "bye"}});
+    socket.json.emit('signaling',{target:{sendto:null,from:null},body:{type: "user disconnected"}});
     detachAllVideo();
     stopAllConnections();
   }
@@ -594,6 +619,7 @@
     //peerStarted = false; --
   }
   --*/
+});
 
   
   </script>
