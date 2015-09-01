@@ -260,12 +260,12 @@
 
   // socket: accept connection request
   function onMessage(evt) {
-    var id = evt.from;
-    var target = evt.sendto;
+    var id = evt.target.from;
+    var target = evt.target.sendto;
     var conn = getConnection(id);
 
-    console.log('----------------\n'+evt.type+'\n------------------');
-    if (evt.type === 'call') {
+    console.log('----------------\n'+evt.body.type+'\n------------------');
+    if (evt.body.type === 'call') {
       if (! isLocalStreamStarted()) {
 	    return;
 	  }
@@ -274,26 +274,26 @@
 	  }
 
       if (isConnectPossible()) {
-        socket.json.send({type: "response", sendto: id });
+        socket.json.send({target:{sendto:id,from:null},body:{type: "response"}});
       }
       else {
 	    console.warn('max connections. so ignore call'); 
 	  }
 	  return;
     }
-    else if (evt.type === 'response') {
+    else if (evt.body.type === 'response') {
       sendOffer(evt);
       return;
-    } else if (evt.type === 'offer') {
+    } else if (evt.body.type === 'offer') {
       console.log("Received offer, set offer, sending answer....")
       onOffer(evt);	  
-    } else if (evt.type === 'answer' && isPeerStarted()) {  // **
+    } else if (evt.body.type === 'answer' && isPeerStarted()) {  // **
       console.log('Received answer, settinng answer SDP');
 	  onAnswer(evt);
-    } else if (evt.type === 'candidate' && isPeerStarted()) { // **
+    } else if (evt.body.type === 'candidate' && isPeerStarted()) { // **
       console.log('Received ICE candidate...');
 	  onCandidate(evt);
-    } else if (evt.type === 'user dissconnected' && isPeerStarted()) { // **
+    } else if (evt.body.type === 'user dissconnected' && isPeerStarted()) { // **
       console.log("disconnected");
       //stop();
 	  detachVideo(id); // force detach video
@@ -366,7 +366,7 @@
   }
   
   function onCandidate(evt) {
-	var id = evt.from;
+	var id = evt.target.from;
     var conn = getConnection(id);
     if (! conn) {
 	  console.error('peerConnection not exist!');
@@ -379,7 +379,7 @@
       return;
     }
 	  
-    var candidate = new RTCIceCandidate({sdpMLineIndex:evt.sdpMLineIndex, sdpMid:evt.sdpMid, candidate:evt.candidate});
+    var candidate = new RTCIceCandidate({sdpMLineIndex:evt.body.sdpMLineIndex, sdpMid:evt.body.sdpMid, candidate:evt.body.candidate});
     console.log("Received Candidate...")
 	console.log(candidate);
     conn.peerconnection.addIceCandidate(candidate);
@@ -389,10 +389,7 @@
     var text = JSON.stringify(sdp);
 	console.log("---sending sdp text ---");
 	console.log(text);
-  console.log(sdp);
-  console.log(Object.keys(sdp));
-  console.log(Object.getOwnPropertyNames(sdp));
-  console.log(sdp.type);
+  
 	//textForSendSDP.value = text;
 	
 	// send via socket
@@ -453,11 +450,11 @@
     peer.onicecandidate = function (evt) {
       if (evt.candidate) {
         console.log(evt.candidate);
-        sendCandidate({type: "candidate", 
+        sendCandidate({target:{sendto:conn.id,from:null},body:{type: "candidate", 
                           sendto: conn.id,
                           sdpMLineIndex: evt.candidate.sdpMLineIndex,
                           sdpMid: evt.candidate.sdpMid,
-                          candidate: evt.candidate.candidate});
+                          candidate: evt.candidate.candidate}});
       } else {
         console.log("End of candidates. ------------------- phase=" + evt.eventPhase);
         conn.established = true;
@@ -489,7 +486,7 @@
   }
 
   function sendOffer(evt) {
-    var id = evt.from;
+    var id = evt.target.from;
 	   var conn = getConnection(id);
     if (!conn) {
       conn = prepareNewConnection(id);
@@ -498,8 +495,9 @@
 	conn.peerconnection.createOffer(function (sessionDescription) { // in case of success
       conn.iceReady = true;
       conn.peerconnection.setLocalDescription(sessionDescription);
-      sessionDescription.sendto = id;
-	  sendSDP(sessionDescription);
+      var sendObj ={target:{sendto:id,from:''},body:sessionDescription};
+	  //sendSDP(sessionDescription);
+      sendSDP(sendObj);
     }, function () { // in case of error
       console.log("Create Offer failed");
     }, mediaConstraints);
@@ -507,11 +505,11 @@
   }
 
   function setOffer(evt) {
-	var id = evt.from;
+	var id = evt.target.from;
     var conn = getConnection(id);
     if (! conn) {
       conn = prepareNewConnection(id);
-      conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt));
+      conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt.body));
     }
 	else {
 	  console.error('peerConnection alreay exist!');
@@ -520,7 +518,7 @@
   
   function sendAnswer(evt) {
     console.log('sending Answer. Creating remote session description...' );
-	var id = evt.from;
+	var id = evt.target.from;
     var conn = getConnection(id);
     if (! conn) {
 	  console.error('peerConnection not exist!');
@@ -531,8 +529,10 @@
       // in case of success
       conn.iceReady = true;
       conn.peerconnection.setLocalDescription(sessionDescription);
-      sessionDescription.sendto = id;
-	  sendSDP(sessionDescription);
+      //sessionDescription.sendto = id;
+	  //sendSDP(sessionDescription);
+    var sendObj ={body:sessionDescription,target:{sendto:id,from:''}};
+      sendSDP(sendObj);
     }, function () { // in case of error
       console.log("Create Answer failed");
     }, mediaConstraints);
@@ -540,13 +540,13 @@
   }
 
   function setAnswer(evt) {
-	var id = evt.from;
+	var id = evt.target.from;
     var conn = getConnection(id);
     if (! conn) {
 	  console.error('peerConnection not exist!');
 	  return
     }
-    conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt));
+    conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt.body));
   }
   
   // -------- handling user UI event -----
@@ -576,13 +576,13 @@
 
     // call others, in same room
     console.log("call others in same room, befeore offer");
-    socket.json.send({type: "call"});
+    socket.json.send({target:{sendto:null,from:null},body:{type: "call"}});
   }
   
   // stop the connection upon user request
   function hangUp() {
     console.log("Hang up.");
-    socket.json.send({type: "bye"});
+    socket.json.send({target:{sendto:null,from:null},body:{type: "bye"}});
     detachAllVideo();
     stopAllConnections();
   }

@@ -13,31 +13,30 @@ io.sockets.on('connection', function(socket) {
 
   socket.on('message', function(message) {
     // 送信元のidをメッセージに追加（相手が分かるように）
-    message.from = socket.id;
+    message.target.from = socket.id;
         // 送信先が指定されているか？
     
-    var target = message.sendto;
-    console.log(Object.keys(message));
-    
-
+    var target = message.target.sendto;
+    var body = message.body;
+  
     if (target) {
 	　　// 送信先が指定されていた場合は、その相手のみに送信
-      console.log(message.from+'  ----->  '+message.sendto+' ('+message.type+') ');
+      console.log(message.target.from+'  ----->  '+message.target.sendto+' ('+message.body.type+') ');
       io.sockets.to(target).emit('message', message);
     return;
     }
 
 	// 特に指定がなければ、ブロードキャスト
   //
-  console.log(message.from+'  emitMessage '+'('+message.type+')'); 
+  console.log(message.target.from+'  emitMessage '+'('+message.body.type+')'); 
   emitMessage('message', message);
 
   
 });
 
-  socket.on('disconnect', function() { 
-    console.log(message.from+'  emitMessage'); 
-    
+  socket.on('disconnect', function(message) { 
+    //console.log(message.target.from+'  emitMessage'); 
+    console.log(socket.id+' disconnected')
     //emitMessage('user disconnected');
   });
 
