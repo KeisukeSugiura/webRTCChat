@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>canvas</title>
+	<script src="jquery-1.11.3.min.js"></script>
+ 	<script src="jquery-ui-1.11.4/jquery-ui.min.js"></script>
+</head>
+<body>
+<canvas id="the-canvas" width="1000" height="1000" style="margin:0px 0px 0px 0px;">
+	
+</canvas>
+
+
+<script>
+$(function(){
+	var canvas = document.getElementById('the-canvas');
+	console.log(canvas);
+	var ctx = canvas.getContext("2d");
+	drawRedCircle(ctx);
+
+	function drawRedCircle(ctx){
+		ctx.beginPath();
+    	ctx.arc(110, 110, 100, 0, Math.PI*2);
+    	ctx.closePath();
+    	ctx.strokeStyle="red";
+    	ctx.lineWidth=5;
+    	ctx.stroke();
+    }
+
+
+    $('#the-canvas').click(function(e){
+    	drawTool.drawCurve(ctx,e.clientX,e.clientY);
+    });
+
+var drawTool = (function(){
+	var module = {};
+
+	module.oldPointX=null; //ベジェ曲線描画に用いる元の座標
+	module.oldPointY=null;
+	module.semiOldPointX=null;
+	module.semiOldPointY=null;
+
+	module.drawFree = function(ctx,cx,cy){
+		//todo bege
+		ctx.quadraticCurveTo()
+		module.oldPointX=module.semiOldPointX;
+		module.oldPointY=module.semiOldPointY;
+		module.semiOldPointX=cx;
+		module.semiOldPointY=cy;
+	}
+
+	module.drawCurve = function(ctx,cx,cy){
+		module.drawPoint(ctx,cx,cy);
+		if(module.oldPointX && module.semiOldPointX){
+			ctx.beginPath();
+			ctx.moveTo((module.oldPointX+module.semiOldPointX)/2,(module.oldPointY+module.semiOldPointY)/2);
+			ctx.quadraticCurveTo(module.semiOldPointX,module.semiOldPointY,(module.semiOldPointX+cx)/2,(module.semiOldPointY+cy)/2);
+			//ctx.closePath();
+			ctx.strokeStyle="red";
+			ctx.lineWidth=5;
+			ctx.stroke();
+			module.updateLocus(cx,cy);
+		}else{
+			module.updateLocus(cx,cy);
+		}
+	}
+
+	module.drawPoint = function(ctx,cx,cy){
+		ctx.beginPath();
+		ctx.arc(cx,cy,3,0,Math.PI*2);
+		//ctx.closePath();
+		ctx.fill();
+	}
+
+	module.updateLocus = function(cx,cy){
+		module.oldPointX = module.semiOldPointX;
+		module.oldPointY = module.semiOldPointY;
+		module.semiOldPointX = cx;
+		module.semiOldPointY = cy;
+	}
+
+	return module;	
+})();
+
+});
+</script>
+</body>
+</html>

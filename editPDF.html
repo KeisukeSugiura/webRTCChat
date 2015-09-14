@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Viewer</title>  
+
+  <script type="text/javascript" src="./jquery-ui-1.11.4/external/jquery/jquery.js"></script>
+  <script type="text/javascript" src="./jquery-ui-1.11.4/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="./pdfjs-1.1.215-dist/build/pdf.js"></script>
+</head>
+<body>
+
+  <div id="mode_button" style="position:absolute;">
+    <input id="free_button" type="button" value="F">
+    <input id="line_button" type="button" value="L">
+    <input id="rect_button" type="button" value="R">
+    <input id="text_button" type="button" value="T">
+    <input id="circle_button" type="button" value="C">
+    <input id="back_button" type="button" value="B">
+  </div>
+  <div>
+    <canvas id="the-canvas"></canvas>
+  </div>
+
+  <script>
+    $(function(){
+
+      var canvas;
+      var context;
+      var canvasStatus=[];
+      var pushing=false;
+      var PDF;
+      var scale=1.0;
+
+  PDFJS.getDocument('1DEX-6.pdf').then(function(pdf) {
+  // you can now use *pdf* here
+  pdf.getPage(1).then(function(page) {
+  // you can now use *page* here
+
+var viewport = page.getViewport(scale);
+
+canvas = document.getElementById('the-canvas');
+context = canvas.getContext('2d');
+canvas.height = viewport.height;
+canvas.width = viewport.width;
+
+var renderContext = {
+  canvasContext: context,
+  viewport: viewport
+};
+page.render(renderContext);
+
+
+    });
+  });
+
+
+/*
+$('#the-canvas').click(function(e){
+  var canvas = document.getElementById('the-canvas');
+  var ctx = canvas.getContext('2d');
+  drawTool.drawCurve(ctx,e.pageX,e.pageY);
+});
+*/
+
+$('#the-canvas').mousedown(function(e){
+  pushing=true;
+  drawTool.pushStatus('the-canvas');
+
+  switch(drawTool.mode){
+    case 0:
+    //自由
+    //var canvas = document.getElementById('the-canvas');
+    //var ctx = canvas.getContext('2d');
+    drawTool.drawCurve(context,e.pageX,e.pageY);
+    break;
+    case 1:
+    //線
+    drawTool.updateLocus(e.pageX,e.pageY);
+    break;
+    case 2:
+    //四角
+    drawTool.updateLocus(e.pageX,e.pageY);
+    break;
+    case 3:
+    //円
+    break;
+    case 4:
+    //テキスト
+    break;
+  }
+});
+$('#the-canvas').mousemove(function(e){
+  if(pushing){
+   switch(drawTool.mode){
+    case 0:
+    //自由
+    var canvas = document.getElementById('the-canvas');
+    var ctx = document.getElementById('2d');
+    drawTool.drawCurve(context,e.pageX,e.pageY);
+    break;
+    case 1:
+    //線
+    break;
+    case 2:
+    //四角
+    break;
+    case 3:
+    //円
+    break;
+    case 4:
+    //テキスト
+    break;
+  }
+  }
+});
+$('#the-canvas').mouseup(function(e){
+  var canvas = document.getElementById('the-canvas');
+  var ctx = canvas.getContext('2d');
+  pushing=false;
+
+   switch(drawTool.mode){
+    case 0:
+    //自由
+    drawTool.drawCurve(context,e.pageX,e.pageY);
+    drawTool.clearLocus();
+    break;
+    case 1:
+    //線
+    drawTool.drawLine(context,drawTool.semiOldPointX,drawTool.semiOldPointY,e.pageX,e.pageY);
+    drawTool.clearLocus();
+    break;
+    case 2:
+    //四角
+    drawTool.drawRect(context,drawTool.semiOldPointX,drawTool.semiOldPointY,e.pageX,e.pageY);
+    drawTool.clearLocus();
+    break;
+    case 3:
+    //円
+    drawTool.clearLocus();
+    break;
+    case 4:
+    //テキスト
+    drawTool.clearLocus();
+    break;
+  }
+});
+
+
+$('#free_button').click(function(e){
+  //自由線 0
+  console.log('mode change 0');
+  drawTool.mode=0;
+});
+$('#line_button').click(function(e){
+  //固定線 1
+  console.log('mode change 1');
+  drawTool.mode=1;
+});
+$('#rect_button').click(function(e){
+  //四角線 2
+  console.log('mode change 2');
+  drawTool.mode=2;
+});
+$('#circle_button').click(function(e){
+  //円 3
+  console.log('mode change 3');
+  drawTool.mode=3;
+});
+$('#text_button').click(function(e){
+  //テキスト 4
+  console.log('mode change 4');
+  drawTool.mode=4;
+});
+$('#back_button').click(function(e){
+  console.log('back');
+  drawTool.popStatus();
+});
+
+
+/**
+canvas描画モジュール
+**/
+var drawTool = (function(){
+  var module = {};
+
+  module.oldPointX=null; //ベジェ曲線描画に用いる元の座標
+  module.oldPointY=null;
+  module.semiOldPointX=null;
+  module.semiOldPointY=null;
+  module.mode = 0;//0:線 1:四角 2:自由線 3:アノテーション
+
+  module.drawCurve = function(ctx,cx,cy){
+   // module.drawPoint(ctx,cx,cy);
+    if(module.oldPointX && module.semiOldPointX){
+      ctx.beginPath();
+      ctx.moveTo((module.oldPointX+module.semiOldPointX)/2,(module.oldPointY+module.semiOldPointY)/2);
+      ctx.quadraticCurveTo(module.semiOldPointX,module.semiOldPointY,(module.semiOldPointX+cx)/2,(module.semiOldPointY+cy)/2);
+      //ctx.closePath();
+      ctx.strokeStyle="red";
+      ctx.lineWidth=5;
+      ctx.stroke();
+      module.updateLocus(cx,cy);
+    }else{
+      module.updateLocus(cx,cy);
+    }
+  }
+
+  module.drawPoint = function(ctx,cx,cy){
+    ctx.beginPath();
+    ctx.arc(cx,cy,5,0,Math.PI*2);
+    //ctx.closePath();
+    ctx.fill();
+  }
+
+  module.drawLine = function(ctx,cx1,cy1,cx2,cy2){
+    ctx.beginPath();
+    //ctx.moveTo(module.semiOldPointX,module.semiOldPointY);
+    //ctx.lineTo(module.semiOldPointX,module.semiOldPointY,cx,cy);
+    ctx.moveTo(cx1,cy1);
+    ctx.lineTo(cx2,cy2);
+    ctx.stroke();
+  }
+
+  module.drawRect = function(ctx,cx1,cy1,cx2,cy2){
+    ctx.beginPath();
+    ctx.moveTo(cx1,cy1);
+    ctx.lineTo(cx1,cy2);
+    ctx.lineTo(cx2,cy2);
+    ctx.lineTo(cx2,cy1);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  module.updateLocus = function(cx,cy){
+    module.oldPointX = module.semiOldPointX;
+    module.oldPointY = module.semiOldPointY;
+    module.semiOldPointX = cx;
+    module.semiOldPointY = cy;
+  }
+
+  module.clearLocus = function(){
+    module.oldPointX = null;
+    module.oldPointY = null;
+    module.semiOldPointX = null;
+    module.semiOldPointY = null;
+  }
+
+  //kokusei:matsuko$4649
+  /**
+    状態を保存する
+  */
+  module.pushStatus = function(canvasID){
+      canvasStatus.push(context.getImageData($('#'+canvasID).offset().left,$('#'+canvasID).offset().top,$('#'+canvasID).width(),$('#'+canvasID).height()));
+  }
+
+
+  /**
+    元の状態に戻す
+  */
+  module.popStatus = function(){
+    var poped=canvasStatus.pop();
+    if(poped){
+     context.putImageData(poped,$('#the-canvas').offset().left,$('#the-canvas').offset().top);
+    }
+  }
+
+  return module;  
+})();
+
+
+});
+
+  </script>
+</body>
+</html>
