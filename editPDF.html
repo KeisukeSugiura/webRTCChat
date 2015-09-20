@@ -9,28 +9,155 @@
 </head>
 <body>
 
-  <div id="mode_button" style="position:absolute;">
+  <div id="mode_button">
     <input id="free_button" type="button" value="F">
     <input id="line_button" type="button" value="L">
     <input id="rect_button" type="button" value="R">
     <input id="text_button" type="button" value="T">
     <input id="circle_button" type="button" value="C">
     <input id="back_button" type="button" value="B">
+
   </div>
-  <div>
-    <canvas id="the-canvas"></canvas>
+  <div id="canvasBox">
+     <canvas id="pdfCanvas" style="background-color:transparent;position: absolute;z-index: 1;"></canvas>
+     <canvas id="myCanvasPicture" style="background-color:transparent;position: absolute;z-index: 2;"></canvas>
+     <canvas id="myCanvasPointer" style="background-color:transparent;position: absolute;z-index: 3;"></canvas>
+     <canvas id="myCanvasDraw" style="background-color:transparent;position: absolute;z-index: 4;"></canvas>
+  
   </div>
 
-  <script>
-    $(function(){
+<!--
+  <script src="http://133.68.112.180:9001/socket.io/socket.io.js"></script>
+-->
+  <script src="http://127.0.0.1:9001/socket.io/socket.io.js"></script>  
+<script>
+/*
+システム
+PDFファイルすべてのページのCanvasを用意する
+入れ替えイベントが起きたら，各ユーザのCanvasを入れ替える
+自身の描画のみ消すことができる
+人数分それに対応するCanvasを用意
+描画の同期イベントは対応するIDでCanvasを選択し描画
+*/
+$(function(){
 
-      var canvas;
-      var context;
-      var canvasStatus=[];
-      var pushing=false;
-      var PDF;
-      var scale=1.0;
+  var canvas;
+  var context;
+  var pdfCanvas = 'pdfCanvas';
+  var myCanvasDrawID='myCanvasDraw';
+  var myCanvasPictureID='myCanvasPicture';
+  var myCanvasPointerID='myCanvasPointer';
+  var canvasStatus=[];
+  var currentPageNumber;
+  var pushing=false;
+  var PDF;
+  //PDF生成のタイミングで取得やるとCanvasの大きさがめちゃくちゃになる
+  //TODO ヒューリスティクス->自動化
+  var pdfWidth=594;
+  var pdfHeight=842;
+  //
+  var scale=1.0;
+  var roomName = 'default';
+  var socketReady = false;
+  var port = 9001;
+  //var socket = io.connect('http://133.68.112.180:' +  port + '/');
+  var socket = io.connect('http://127.0.0.1:' + port + '/');
+  /*
+  socket.ioハンドラ
+  */
+  // socket: channel connected
+  
+  socket.on('connect', onOpened)
+        .on('syncLine',onLineDrawed)
+        .on('syncFree',onFreeDrawed)
+        .on('syncRect',onRectDrawed)
+        .on('syncPointer',onPointerDrawed)
+        .on('addCanvas',onAddCanvas)
+        .on('pageNext',onPageNext)
+        .on('pagePrev',onPagePrev);
+  
+  function onOpened(evt) {
+    console.log('socket opened.');
+    socketReady = true;
+  
+    roomName = getRoomName(); // 会議室名を取得する
+   socket.emit('enter', roomName);
+   socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null});
+  console.log('enter to ' + roomName);
+  }
 
+function getRoomName() { // たとえば、 URLに  ?roomname  とする
+    var url = document.location.href;
+    var args = url.split('?');
+    if (args.length > 1) {
+      var room = args[1];
+      if (room != "") {
+        return room;
+      }
+    }
+    return "_defaultroom";
+  }
+
+  function onNewCanvas(message){
+    socket.emit('noticeAddCanvas',{roomName:roomName});
+  }
+
+  function onLineDrawed(message){
+      var targetID = 'canvasDraw'+message.target.from;
+      var messageValue = message.body.value;
+      drawTool.drawLine(targetID,messageValue.startX,messageValue.startY,messageValue,endX,messageValue.endY);
+      drawTool.clearLocus();
+  }
+
+  function onFreeDrawed(message){
+    console.log('syncFreeDrawed from '+message.target.from);
+      var targetID = 'canvasDraw'+message.target.from;
+      var messageValue = message.body.value;
+      drawTool.resDrawCurve(targetID,messageValue.currentX,messageValue.currentY);
+        
+      if(messageValue.mouseUp){
+        drawTool.clearLocus(targetID);
+      }
+  }
+
+  function onRectDrawed(message){
+      var targetID = 'canvasDraw'+message.target.from;
+
+  }
+
+  function onPointerDrawed(message){
+      var targetID = 'canvasDraw'+message.target.from;
+
+  }
+
+
+  function onAddCanvas(message){
+    var canvasID = message.target.from;
+    console.log(message.target.sendto);
+
+    drawTool.addCanvas(canvasID);
+    if(message.target.sendto ==null){
+
+    socket.emit('noticeAddCanvas',{roomName:roomName,sendto:message.target.from});
+    }
+  }
+
+  function onPointerDrawed(message){
+      var targetID = 'canvasDraw'+message.target.from;
+
+  }
+
+  function onPageNext(message){
+
+  }
+
+  function onPagePrev(message){
+
+  }
+
+/*
+pdf初期呼び出し
+*/
   PDFJS.getDocument('1DEX-6.pdf').then(function(pdf) {
   // you can now use *pdf* here
   pdf.getPage(1).then(function(page) {
@@ -38,11 +165,24 @@
 
 var viewport = page.getViewport(scale);
 
-canvas = document.getElementById('the-canvas');
+canvas = document.getElementById(pdfCanvas);
 context = canvas.getContext('2d');
 canvas.height = viewport.height;
 canvas.width = viewport.width;
-
+pdfWidth = canvas.width;
+pdfHeight = canvas.height;
+$('#'+myCanvasDrawID).attr({
+  width:pdfWidth,
+  Height:pdfHeight,
+});
+$('#'+myCanvasPictureID).attr({
+  width:pdfWidth,
+  Height:pdfHeight,
+});
+$('#'+myCanvasPointerID).attr({
+  width:pdfWidth,
+  Height:pdfHeight,
+});
 var renderContext = {
   canvasContext: context,
   viewport: viewport
@@ -62,92 +202,11 @@ $('#the-canvas').click(function(e){
 });
 */
 
-$('#the-canvas').mousedown(function(e){
-  pushing=true;
-  drawTool.pushStatus('the-canvas');
-
-  switch(drawTool.mode){
-    case 0:
-    //自由
-    //var canvas = document.getElementById('the-canvas');
-    //var ctx = canvas.getContext('2d');
-    drawTool.drawCurve(context,e.pageX,e.pageY);
-    break;
-    case 1:
-    //線
-    drawTool.updateLocus(e.pageX,e.pageY);
-    break;
-    case 2:
-    //四角
-    drawTool.updateLocus(e.pageX,e.pageY);
-    break;
-    case 3:
-    //円
-    break;
-    case 4:
-    //テキスト
-    break;
-  }
-});
-$('#the-canvas').mousemove(function(e){
-  if(pushing){
-   switch(drawTool.mode){
-    case 0:
-    //自由
-    var canvas = document.getElementById('the-canvas');
-    var ctx = document.getElementById('2d');
-    drawTool.drawCurve(context,e.pageX,e.pageY);
-    break;
-    case 1:
-    //線
-    break;
-    case 2:
-    //四角
-    break;
-    case 3:
-    //円
-    break;
-    case 4:
-    //テキスト
-    break;
-  }
-  }
-});
-$('#the-canvas').mouseup(function(e){
-  var canvas = document.getElementById('the-canvas');
-  var ctx = canvas.getContext('2d');
-  pushing=false;
-
-   switch(drawTool.mode){
-    case 0:
-    //自由
-    drawTool.drawCurve(context,e.pageX,e.pageY);
-    drawTool.clearLocus();
-    break;
-    case 1:
-    //線
-    drawTool.drawLine(context,drawTool.semiOldPointX,drawTool.semiOldPointY,e.pageX,e.pageY);
-    drawTool.clearLocus();
-    break;
-    case 2:
-    //四角
-    drawTool.drawRect(context,drawTool.semiOldPointX,drawTool.semiOldPointY,e.pageX,e.pageY);
-    drawTool.clearLocus();
-    break;
-    case 3:
-    //円
-    drawTool.clearLocus();
-    break;
-    case 4:
-    //テキスト
-    drawTool.clearLocus();
-    break;
-  }
-});
-
-
+/*
+切り替えツール
+*/
 $('#free_button').click(function(e){
-  //自由線 0
+  //自由線 0a
   console.log('mode change 0');
   drawTool.mode=0;
 });
@@ -181,38 +240,81 @@ $('#back_button').click(function(e){
 canvas描画モジュール
 **/
 var drawTool = (function(){
+  /*
+  各メソッドのcanvasIDは　'canvas'+idとする
+  */
   var module = {};
 
+  /*
+  module['canvasDraw'+canvasID]={
+    */
   module.oldPointX=null; //ベジェ曲線描画に用いる元の座標
-  module.oldPointY=null;
-  module.semiOldPointX=null;
+  module.oldPointY=null;  //一番最後
+  module.semiOldPointX=null; //直近
   module.semiOldPointY=null;
   module.mode = 0;//0:線 1:四角 2:自由線 3:アノテーション
+  
+  
 
-  module.drawCurve = function(ctx,cx,cy){
+  module.drawCurve = function(canvasID,cx,cy){
    // module.drawPoint(ctx,cx,cy);
-    if(module.oldPointX && module.semiOldPointX){
+    if(module[canvasID].oldPointX && module[canvasID].semiOldPointX){
+      var cav = document.getElementById(canvasID);
+      ctx = cav.getContext('2d');
       ctx.beginPath();
-      ctx.moveTo((module.oldPointX+module.semiOldPointX)/2,(module.oldPointY+module.semiOldPointY)/2);
-      ctx.quadraticCurveTo(module.semiOldPointX,module.semiOldPointY,(module.semiOldPointX+cx)/2,(module.semiOldPointY+cy)/2);
+      ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
+      ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
       //ctx.closePath();
+      
       ctx.strokeStyle="red";
       ctx.lineWidth=5;
       ctx.stroke();
-      module.updateLocus(cx,cy);
+    
+     
+      module.updateLocus(canvasID,cx,cy);
     }else{
-      module.updateLocus(cx,cy);
+
+      module.updateLocus(canvasID,cx,cy);
     }
   }
 
-  module.drawPoint = function(ctx,cx,cy){
+  module.resDrawCurve = function(canvasID,cx,cy){
+   // module.drawPoint(ctx,cx,cy);
+
+   console.log(module[canvasID].oldPointX);
+    if(module[canvasID].oldPointX && module[canvasID].semiOldPointX){
+      var cav = document.getElementById(canvasID);
+      console.log(cav);
+      ctx = cav.getContext('2d');
+      ctx.beginPath();
+      ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
+      ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
+      //ctx.closePath();
+      
+      ctx.strokeStyle="red";
+      ctx.lineWidth=5;
+      ctx.stroke();
+    
+      module.updateLocus(canvasID,cx,cy);
+    }else{
+      console.log('old X : '+module[canvasID].oldPointX);
+      console.log('semi X : '+module[canvasID].semiOldPointX);
+      module.updateLocus(canvasID,cx,cy);
+    }
+  }
+
+  module.drawPoint = function(canvasID,cx,cy){
+    var cav = document.getElementById(canvasID);
+    var ctx = cav.getContext('2d');
     ctx.beginPath();
     ctx.arc(cx,cy,5,0,Math.PI*2);
     //ctx.closePath();
     ctx.fill();
   }
 
-  module.drawLine = function(ctx,cx1,cy1,cx2,cy2){
+  module.drawLine = function(canvasID,cx1,cy1,cx2,cy2){
+    var cav = document.getElementById(canvasID);
+    var ctx = cav.getContext('2d');
     ctx.beginPath();
     //ctx.moveTo(module.semiOldPointX,module.semiOldPointY);
     //ctx.lineTo(module.semiOldPointX,module.semiOldPointY,cx,cy);
@@ -221,7 +323,9 @@ var drawTool = (function(){
     ctx.stroke();
   }
 
-  module.drawRect = function(ctx,cx1,cy1,cx2,cy2){
+  module.drawRect = function(canvasID,cx1,cy1,cx2,cy2){
+    var cav = document.getElementById(canvasID);
+    var ctx = cav.getContext('2d');
     ctx.beginPath();
     ctx.moveTo(cx1,cy1);
     ctx.lineTo(cx1,cy2);
@@ -231,18 +335,19 @@ var drawTool = (function(){
     ctx.stroke();
   }
 
-  module.updateLocus = function(cx,cy){
-    module.oldPointX = module.semiOldPointX;
-    module.oldPointY = module.semiOldPointY;
-    module.semiOldPointX = cx;
-    module.semiOldPointY = cy;
+
+  module.updateLocus = function(canvasID,cx,cy){
+    module[canvasID].oldPointX = module[canvasID].semiOldPointX;
+    module[canvasID].oldPointY = module[canvasID].semiOldPointY;
+    module[canvasID].semiOldPointX = cx;
+    module[canvasID].semiOldPointY = cy;
   }
 
-  module.clearLocus = function(){
-    module.oldPointX = null;
-    module.oldPointY = null;
-    module.semiOldPointX = null;
-    module.semiOldPointY = null;
+  module.clearLocus = function(canvasID){
+    module[canvasID].oldPointX = null;
+    module[canvasID].oldPointY = null;
+    module[canvasID].semiOldPointX = null;
+    module[canvasID].semiOldPointY = null;
   }
 
   //kokusei:matsuko$4649
@@ -250,6 +355,8 @@ var drawTool = (function(){
     状態を保存する
   */
   module.pushStatus = function(canvasID){
+    //TODO 自分の分と相手の分，どのように管理するのか
+    //ans TODO 各ユーザごとにcanvasを追加する
       canvasStatus.push(context.getImageData($('#'+canvasID).offset().left,$('#'+canvasID).offset().top,$('#'+canvasID).width(),$('#'+canvasID).height()));
   }
 
@@ -258,15 +365,181 @@ var drawTool = (function(){
     元の状態に戻す
   */
   module.popStatus = function(){
+    //TODO 各ユーザごとにcanvasを持たせておき,対応するcanvasStatusをpopする
     var poped=canvasStatus.pop();
     if(poped){
-     context.putImageData(poped,$('#the-canvas').offset().left,$('#the-canvas').offset().top);
+     context.putImageData(poped,$('#myCanvas').offset().left,$('#myCanvas').offset().top);
     }
+  }
+
+
+  module.addCanvas= function(canvasID){
+    var newElement1 = document.createElement('canvas');
+    var newElement2 = document.createElement('canvas');
+    var newElement3 = document.createElement('canvas');
+    //TODO canvas要素のプロパティ設定
+    newElement1.id='canvasDraw'+canvasID;
+    newElement2.id='canvasPicture'+canvasID;
+    newElement3.id='canvasPointer'+canvasID;
+
+    newElement1.width = pdfWidth;
+    newElement2.width = pdfWidth;
+    newElement3.width = pdfWidth;
+
+    newElement1.height = pdfHeight;
+    newElement2.height = pdfHeight;
+    newElement3.height = pdfHeight;
+
+    var canvasBox = document.getElementById('canvasBox');
+    canvasBox.appendChild(newElement1);
+    canvasBox.appendChild(newElement2);
+    canvasBox.appendChild(newElement3);
+    $('#canvasDraw'+canvasID).css({
+        backgroundColor:'transparent',
+        zIndex:2,
+        position:'absolute'
+    });
+    $('#canvasPicture'+canvasID).css({
+        backgroundColor:'transparent',
+        zIndex:2,
+        position:'absolute'
+    });
+    $('#canvasPointer'+canvasID).css({
+        backgroundColor:'transparent',
+        zIndex:3,
+        position:'absolute'
+    });
+
+
+    module['canvasDraw'+canvasID] = {};
+    module['canvasDraw'+canvasID].semiOldPointY=null;
+    module['canvasDraw'+canvasID].semiOldPointX=null;
+    module['canvasDraw'+canvasID].oldPointX=null;
+    module['canvasDraw'+canvasID].oldPointY=null;
+
+
+   
+    //module.setEventListener(canvasID);
+  }
+
+  module.setEventListener = function(canvasID){
+
+/*
+描画イベント
+*/
+$('#'+canvasID).mousedown(function(e){
+  pushing=true;
+  module.pushStatus(canvasID);
+  console.log('mouseDown');
+  switch(module.mode){
+    case 0:
+    //自由
+    //var canvas = document.getElementById('the-canvas');
+    //var ctx = canvas.getContext('2d');
+    module.drawCurve(canvasID,e.pageX,e.pageY);
+     socket.json.emit('noticeFreeDrawed',{
+          roomName:roomName,
+          currentX:e.pageX,
+          currentY:e.pageY,
+          mouseUp:false
+      });
+    break;
+    case 1:
+    //線
+    module.updateLocus(canvasID,e.pageX,e.pageY);
+    break;
+    case 2:
+    //四角
+    module.updateLocus(canvasID,e.pageX,e.pageY);
+    break;
+    case 3:
+    //円
+    break;
+    case 4:
+    //テキスト
+    break;
+  }
+});
+$('#'+canvasID).mousemove(function(e){
+  console.log('mousemove');
+  if(pushing){
+   switch(module.mode){
+    case 0:
+    //自由
+    module.drawCurve(canvasID,e.pageX,e.pageY);
+     socket.json.emit('noticeFreeDrawed',{
+          roomName:roomName,
+          currentX:e.pageX,
+          currentY:e.pageY,
+          mouseUp:false
+      });
+    break;
+    case 1:
+    //線
+    break;
+    case 2:
+    //四角
+    break;
+    case 3:
+    //円
+    break;
+    case 4:
+    //テキスト
+    break;
+  }
+  }
+});
+$('#'+canvasID).mouseup(function(e){
+    console.log('mouseUp');
+   switch(module.mode){
+    case 0:
+    //自由
+    module.drawCurve(canvasID,e.pageX,e.pageY);
+     socket.json.emit('noticeFreeDrawed',{
+          roomName:roomName,
+          currentX:e.pageX,
+          currentY:e.pageY,
+          mouseUp:true
+      });
+    module.clearLocus(canvasID);
+    if(canvasID == myCanvasDrawID){
+      pushing=false;
+    }
+    break;
+    case 1:
+    //線
+    module.drawLine(canvasID,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX,e.pageY);
+    module.clearLocus(canvasID);
+    break;
+    case 2:
+    //四角
+    module.drawRect(canvasID,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX,e.pageY);
+    module.clearLocus(canvasID);
+    break;
+    case 3:
+    //円
+    module.clearLocus(canvasID);
+    break;
+    case 4:
+    //テキスト
+    module.clearLocus(canvasID);
+    break;
+  }
+});
+
   }
 
   return module;  
 })();
 
+//初期リスナーセット
+//全般的に初期化
+drawTool.setEventListener(myCanvasDrawID);
+drawTool[myCanvasDrawID] = {};
+drawTool[myCanvasDrawID].semiOldPointX=null;
+drawTool[myCanvasDrawID].semiOldPointY=null;
+drawTool[myCanvasDrawID].oldPointX=null;
+drawTool[myCanvasDrawID].oldPointY=null;
 
 });
 

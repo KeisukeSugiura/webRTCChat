@@ -19,7 +19,8 @@ io.sockets.on('connection', function(socket) {
     
     var target = message.target.sendto;
     var body = message.body;
-  
+
+
     if (target) {
 	　　// 送信先が指定されていた場合は、その相手のみに送信
       console.log(message.target.from+'  ----->  '+message.target.sendto+' ('+message.body.type+') ');
@@ -43,6 +44,23 @@ io.sockets.on('connection', function(socket) {
       target:{from:socket.id,sendto:null}
     }
     emitMessage('signaling',sendObj);
+  });
+
+
+  socket.on('changeVideoPosition',function(message){
+    var sendObj={
+      body:{type:'changeVideoPosition',value:message},
+      target:{from:socket.id,sendto:null,roomName:message.roomName}
+    }
+    emitMessage('changeVideoPosition',sendObj);
+  });
+
+  socket.on('initializeVideoPosition',function(message){
+      var sendObj={
+        body:{type:'initializeVideoPosition',value:message},
+        target:{from:socket.id,sendto:null,roomName:message.roomName}
+      }
+      emitMessage('initializeVideoPosition',sendObj);
   });
 
   // 会議室名が指定されていたら、室内だけに通知

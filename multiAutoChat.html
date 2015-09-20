@@ -13,15 +13,15 @@
   <button id="call_button" type="button">Connect</button>
   <button id="hangup_button" type="button">Hang Up</button>
   -->
-  <br />
-  <div style="position: relative;">
-   <video id="local-video" autoplay style="width: 240px; height: 180px; border: 1px solid black;"></video>
    <!-- <video id="remote-video" autoplay style="width: 240px; height: 180px; border: 1px solid black;"></video> -->
   <!-- <video id="webrtc-remote-video-0" autoplay style="position: absolute; top: 250px; left: 0px; width: 320px; height: 240px; border: 1px solid black; "></video>
    <video id="webrtc-remote-video-1" autoplay style="position: absolute; top: 250px; left: 330px; width: 320px; height: 240px; border: 1px solid black; "></video>
    <video id="webrtc-remote-video-2" autoplay style="position: absolute; top: 0px; left: 330px; width: 320px; height: 240px; border: 1px solid black; " ></video>
    -->
-   <div id="item_area"></div>
+   <div id="item_area" style="width:1000px;height:1000px;">
+
+   <video id="local-video" autoplay style="width: 240px; height: 180px; border: 1px solid red;position:absolute;margin:0px 0px 0px 0px;z-index: 0;"></video>
+
   </div>
   
   <!---
@@ -47,11 +47,27 @@
   --->
   
   <!---- socket ------>
+  <!--
   <script src="http://133.68.112.180:9001/socket.io/socket.io.js"></script>
-  
+-->
+  <script src="http://127.0.0.1:9001/socket.io/socket.io.js"></script>  
+
   <script>
   $(function(){
     var localVideo = document.getElementById('local-video');
+    $('#local-video').draggable({
+        drag:sendVideoPositionChanged,
+        containment:'parent'
+    });
+    $('#item_area').dblclick(function(e){
+      if($('#local-video').zIndex()== 0){
+        $('#local-video').zIndex(10);
+      }
+      else{
+        $('#local-video').zIndex(0);
+      }
+    });
+
   //var remoteVideo = document.getElementById('remote-video');
   var localStream = null;
   var mediaConstraints = {'mandatory': {'OfferToReceiveAudio':false, 'OfferToReceiveVideo':true }};
@@ -69,6 +85,14 @@
   startVideo();
   var roomName ="_defaultroom";
 
+  function sendVideoPositionChanged(e,ui){
+      var sendObj={
+        top:$('#local-video').offset().top,
+        left:$('#local-video').offset().left,
+        roomName:roomName
+      }
+      socket.emit('changeVideoPosition',sendObj);
+  }
 
   function getVideoForRemote(index) {
     var elementID = 'webrtc-remote-video-' + index;
@@ -104,9 +128,11 @@
   function generateItemWithId(id){
     var itemHtml = 
     '<video id="'+id+'"'+
-    'autoplay style="top:250px;left:100px;width:320px;height:240px;border:1px solid black;position:absolute;">';
+    'autoplay style="width:240px;height:180px;border:1px solid black;position:absolute;margin:0px 0px 0px 0px;zIndex:1;">';
     $('#item_area').append(itemHtml);
-    $('#'+id).draggable();
+
+    socket.emit('initializeVideoPosition',{roomName:roomName});
+    //$('#'+id).draggable();
     return document.getElementById(id);
   }
 
@@ -120,6 +146,7 @@
       console.log("videoElement.src=" + videoElement.src);
       pushVideoInUse(id, videoElement);
       videoElement.style.display = 'block';
+
     }
     else {
       console.error('--- no video element stand by.');
@@ -267,11 +294,13 @@
   // create socket
   var socketReady = false;
   var port = 9001;
-  var socket = io.connect('http://133.68.112.180:' + port + '/');
-  
+  // var socket = io.connect('http://133.68.112.180:' + port + '/');
+  var socket = io.connect('http://127.0.0.1:' + port + '/');
   // socket: channel connected
   socket.on('connect', onOpened)
-        .on('signaling', onMessage);
+        .on('signaling', onMessage)
+        .on('changeVideoPosition',onPositionChanged)
+        .on('initializeVideoPosition',onPositionInitialize);
 
   function onOpened(evt) {
     console.log('socket opened.');
@@ -317,12 +346,25 @@
     } else if (evt.body.type === 'candidate' && isPeerStarted()) { // **
       console.log('Received ICE candidate...');
 	  onCandidate(evt);
+
     } else if (evt.body.type === 'user disconnected' && isPeerStarted()) { // **
       console.log("disconnected");
       //stop();
 	     detachVideo(id); // force detach video
       stopConnection(id);
     }
+  }
+
+  function onPositionChanged(message){
+      var targetID = message.target.from;
+      $('#'+targetID).css({
+        top:message.body.value.top,
+        left:message.body.value.left
+      });
+  }
+
+  function onPositionInitialize(message){
+      sendVideoPositionChanged();
   }
 
   function getRoomName() { // たとえば、 URLに  ?roomname  とする
@@ -483,6 +525,7 @@
       } else {
         console.log("End of candidates. ------------------- phase=" + evt.eventPhase);
         conn.established = true;
+
       }
     };
 
@@ -496,6 +539,7 @@
     function onRemoteStreamAdded(event) {
       console.log("Added remote stream");
       attachVideo(this.id, event.stream);
+
 	  //remoteVideo.src = window.webkitURL.createObjectURL(event.stream);
     }
 
@@ -572,6 +616,7 @@
 	  return
     }
     conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt.body));
+
   }
   
   // -------- handling user UI event -----
