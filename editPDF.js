@@ -85,18 +85,18 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('noticeNextPage',function(message){
       var sendObj={
-      body:{type:'nextPage',value:message},
+      body:{type:'pageNext',value:message},
       target:{from:socket.id,sendto:null,roomName:message.roomName}
     }
-      emitMessage('nextPage',sendObj)
+      emitMessage('pageNext',sendObj)
   });
 
-      socket.on('noticeNextPage',function(message){
+      socket.on('noticePrevPage',function(message){
       var sendObj={
-      body:{type:'nextPage',value:message},
+      body:{type:'panePrev',value:message},
       target:{from:socket.id,sendto:null,roomName:message.roomName}
     }
-      emitMessage('nextPage',sendObj)
+      emitMessage('pagePrev',sendObj)
   });
 
   // 会議室名が指定されていたら、室内だけに通知

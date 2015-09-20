@@ -75,6 +75,10 @@
   // ---- multi people video & audio ----
   var videoElementsInUse = {};
   var videoElementsStandBy = {};
+  var myCenterX=0;
+  var myCenterY=0;
+  var centerX = new Array();
+  var centerY = new Array();
   //$('#start_button').click(startVideo);
   //$('#stop_button').click(stopVideo);
   //$('#call_button').click(call);
@@ -86,12 +90,16 @@
   var roomName ="_defaultroom";
 
   function sendVideoPositionChanged(e,ui){
+      myCenterX = $('#local-video').offset().left;
+      myCenterY = $('#local-video').offset().top;
+
       var sendObj={
         top:$('#local-video').offset().top,
         left:$('#local-video').offset().left,
         roomName:roomName
       }
       socket.emit('changeVideoPosition',sendObj);
+      setAllVideoVolume();
   }
 
   function getVideoForRemote(index) {
@@ -361,6 +369,9 @@
         top:message.body.value.top,
         left:message.body.value.left
       });
+      centerX[targetID] = message.body.value.left;
+      centerY[targetID] = message.body.value.top;
+      setVideoVolume(targetID);
   }
 
   function onPositionInitialize(message){
@@ -496,6 +507,33 @@
   function stopVideo() {
     localVideo.src = "";
     localStream.stop();
+  }
+
+  function setVideoVolume(id){
+    var targetVideo = document.getElementById(id);
+    console.log(targetVideo);
+    var dist = euclidDist(id);
+    if(dist<120){
+      targetVideo.volume=1.0;
+    }
+    else if(dist < 360){
+      targetVideo.volume = 1.0 - ((dist-120) / 240);
+    }else{
+      targetVideo.volume = 0;
+    }
+  }
+  function setAllVideoVolume(){
+    var keys =Object.keys(videoElementsInUse);
+    console.log(keys);
+    keys.forEach(function(value,index,arr){
+        console.log('change volume in '+ value);
+        setVideoVolume(value);
+    });
+  }
+
+  function euclidDist(id){
+      //想定myCenterXとcenterX[]が存在している
+      return distance = Math.sqrt((myCenterX-centerX[id])*(myCenterX-centerX[id])+(myCenterY-centerY[id])*(myCenterY-centerY[id]));
   }
 
   // ---------------------- connection handling -----------------------

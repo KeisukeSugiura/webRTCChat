@@ -16,6 +16,9 @@
     <input id="text_button" type="button" value="T">
     <input id="circle_button" type="button" value="C">
     <input id="back_button" type="button" value="B">
+    <input id="next_button" type="button" value=">">
+    <input id="prev_button" type="button" value="<">
+    <input id="pointer_button" type="button" value="P">
 
   </div>
   <div id="canvasBox">
@@ -43,6 +46,7 @@ $(function(){
 
   var canvas;
   var context;
+
   var pdfCanvas = 'pdfCanvas';
   var myCanvasDrawID='myCanvasDraw';
   var myCanvasPictureID='myCanvasPicture';
@@ -53,190 +57,21 @@ $(function(){
   var PDF;
   //PDF生成のタイミングで取得やるとCanvasの大きさがめちゃくちゃになる
   //TODO ヒューリスティクス->自動化
+  var pdf;
+  var pdfSize;
   var pdfWidth=594;
   var pdfHeight=842;
-  //
+  var pdfIndex =1;
   var scale=1.0;
   var roomName = 'default';
   var socketReady = false;
   var port = 9001;
   //var socket = io.connect('http://133.68.112.180:' +  port + '/');
   var socket = io.connect('http://127.0.0.1:' + port + '/');
-  /*
-  socket.ioハンドラ
-  */
-  // socket: channel connected
   
-  socket.on('connect', onOpened)
-        .on('syncLine',onLineDrawed)
-        .on('syncFree',onFreeDrawed)
-        .on('syncRect',onRectDrawed)
-        .on('syncPointer',onPointerDrawed)
-        .on('addCanvas',onAddCanvas)
-        .on('pageNext',onPageNext)
-        .on('pagePrev',onPagePrev);
-  
-  function onOpened(evt) {
-    console.log('socket opened.');
-    socketReady = true;
-  
-    roomName = getRoomName(); // 会議室名を取得する
-   socket.emit('enter', roomName);
-   socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null});
-  console.log('enter to ' + roomName);
-  }
-
-function getRoomName() { // たとえば、 URLに  ?roomname  とする
-    var url = document.location.href;
-    var args = url.split('?');
-    if (args.length > 1) {
-      var room = args[1];
-      if (room != "") {
-        return room;
-      }
-    }
-    return "_defaultroom";
-  }
-
-  function onNewCanvas(message){
-    socket.emit('noticeAddCanvas',{roomName:roomName});
-  }
-
-  function onLineDrawed(message){
-      var targetID = 'canvasDraw'+message.target.from;
-      var messageValue = message.body.value;
-      drawTool.drawLine(targetID,messageValue.startX,messageValue.startY,messageValue,endX,messageValue.endY);
-      drawTool.clearLocus();
-  }
-
-  function onFreeDrawed(message){
-    console.log('syncFreeDrawed from '+message.target.from);
-      var targetID = 'canvasDraw'+message.target.from;
-      var messageValue = message.body.value;
-      drawTool.resDrawCurve(targetID,messageValue.currentX,messageValue.currentY);
-        
-      if(messageValue.mouseUp){
-        drawTool.clearLocus(targetID);
-      }
-  }
-
-  function onRectDrawed(message){
-      var targetID = 'canvasDraw'+message.target.from;
-
-  }
-
-  function onPointerDrawed(message){
-      var targetID = 'canvasDraw'+message.target.from;
-
-  }
 
 
-  function onAddCanvas(message){
-    var canvasID = message.target.from;
-    console.log(message.target.sendto);
-
-    drawTool.addCanvas(canvasID);
-    if(message.target.sendto ==null){
-
-    socket.emit('noticeAddCanvas',{roomName:roomName,sendto:message.target.from});
-    }
-  }
-
-  function onPointerDrawed(message){
-      var targetID = 'canvasDraw'+message.target.from;
-
-  }
-
-  function onPageNext(message){
-
-  }
-
-  function onPagePrev(message){
-
-  }
-
-/*
-pdf初期呼び出し
-*/
-  PDFJS.getDocument('1DEX-6.pdf').then(function(pdf) {
-  // you can now use *pdf* here
-  pdf.getPage(1).then(function(page) {
-  // you can now use *page* here
-
-var viewport = page.getViewport(scale);
-
-canvas = document.getElementById(pdfCanvas);
-context = canvas.getContext('2d');
-canvas.height = viewport.height;
-canvas.width = viewport.width;
-pdfWidth = canvas.width;
-pdfHeight = canvas.height;
-$('#'+myCanvasDrawID).attr({
-  width:pdfWidth,
-  Height:pdfHeight,
-});
-$('#'+myCanvasPictureID).attr({
-  width:pdfWidth,
-  Height:pdfHeight,
-});
-$('#'+myCanvasPointerID).attr({
-  width:pdfWidth,
-  Height:pdfHeight,
-});
-var renderContext = {
-  canvasContext: context,
-  viewport: viewport
-};
-page.render(renderContext);
-
-
-    });
-  });
-
-
-/*
-$('#the-canvas').click(function(e){
-  var canvas = document.getElementById('the-canvas');
-  var ctx = canvas.getContext('2d');
-  drawTool.drawCurve(ctx,e.pageX,e.pageY);
-});
-*/
-
-/*
-切り替えツール
-*/
-$('#free_button').click(function(e){
-  //自由線 0a
-  console.log('mode change 0');
-  drawTool.mode=0;
-});
-$('#line_button').click(function(e){
-  //固定線 1
-  console.log('mode change 1');
-  drawTool.mode=1;
-});
-$('#rect_button').click(function(e){
-  //四角線 2
-  console.log('mode change 2');
-  drawTool.mode=2;
-});
-$('#circle_button').click(function(e){
-  //円 3
-  console.log('mode change 3');
-  drawTool.mode=3;
-});
-$('#text_button').click(function(e){
-  //テキスト 4
-  console.log('mode change 4');
-  drawTool.mode=4;
-});
-$('#back_button').click(function(e){
-  console.log('back');
-  drawTool.popStatus();
-});
-
-
-/**
+  /**
 canvas描画モジュール
 **/
 var drawTool = (function(){
@@ -509,11 +344,25 @@ $('#'+canvasID).mouseup(function(e){
     case 1:
     //線
     module.drawLine(canvasID,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX,e.pageY);
+    socket.json.emit('noticeLineDrawed',{
+        roomName:roomName,
+        startX:module[canvasID].semiOldPointX,
+        startY:module[canvasID].semiOldPointY,
+        endX:e.pageX,
+        endY:e.pageY
+    });
     module.clearLocus(canvasID);
     break;
     case 2:
     //四角
     module.drawRect(canvasID,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX,e.pageY);
+    socket.json.emit('noticeRectDrawed',{
+        roomName:roomName,
+        startX:module[canvasID].semiOldPointX,
+        startY:module[canvasID].semiOldPointY,
+        endX:e.pageX,
+        endY:e.pageY
+    });
     module.clearLocus(canvasID);
     break;
     case 3:
@@ -531,6 +380,322 @@ $('#'+canvasID).mouseup(function(e){
 
   return module;  
 })();
+
+  function generateCanvas(canvasID,pageNum){
+    var newElement1 = document.createElement('canvas');
+    var newElement2 = document.createElement('canvas');
+    var newElement3 = document.createElement('canvas');
+    
+    newElement1.id = 'canvasDraw'+canvasID+String(pageNum);
+    newElement2.id = 'canvasPicture'+canvasID+String(pageNum);
+    newElement3.id = 'canvasPointer'+canvasID+String(pageNum);
+
+    newElement1.zIndex = 2;
+    newElement2.zIndex = 2;
+    newElement3.zIndex = 3;
+
+    var pageWidth = document.getElementById('canvasPDF'+String(pageNum).width;;
+    var pageHeight = document.getElementById('canvasPDF'+String(pageNum).height;
+
+    newElement1.width= pageWidth;
+    newElement1.height= pageHeight;
+    newElement2.width= pageWidth;
+    newElement2.height= pageHeight;
+    newElement3.width= pageWidth;
+    newElement3.height= pageHeight;
+
+    canvasContainer[pageNum].push(newElement1);
+    canvasContainer[pageNum].push(newElement2);
+    canvasContainer[pageNum].push(newElement3);
+  }
+
+
+  /**
+  Addのタイミングで呼ばれる
+  */
+  function generateCanvasList(canvasID){
+    var i = 1;
+    for(i=1;i<pdf.numPages+1;i++){
+      generateCanvas(canvasID,i);
+      //setPdf2Canvas(i);
+    }
+  }
+
+
+  /**
+    PDFの読み込み時に呼ばれる
+  */
+  function setPDF2Canvas(pageNum){
+    //最奥CanvasであるPDFの描画
+    pdf.getPage(pageNum).then(function(page){
+      var viewport = page.getViewport(scale);
+      var newCanvas = document.createElement('canvas');
+      newCanvas.id='canvasPDF'+String(pageNum);
+      newCanvas.width = viewport.width;
+      newCanvas.height = viewport.height;
+      var newContext = newCanvas.getContext('2d');
+
+      var renderContext = {
+       canvasContext: newContext,
+       viewport: viewport
+      };
+      page.render(renderContext);
+       return newCanvas;
+
+       });
+  }
+  /*
+  socket.ioハンドラ
+  */
+  // socket: channel connected
+  
+  socket.on('connect', onOpened)
+        .on('syncLine',onLineDrawed)
+        .on('syncFree',onFreeDrawed)
+        .on('syncRect',onRectDrawed)
+        .on('syncPointer',onPointerDrawed)
+        .on('addCanvas',onAddCanvas)
+        .on('pageNext',onPageNext)
+        .on('pagePrev',onPagePrev);
+  
+  function onOpened(evt) {
+    console.log('socket opened.');
+    socketReady = true;
+  
+    roomName = getRoomName(); // 会議室名を取得する
+   socket.emit('enter', roomName);
+   socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null});
+  console.log('enter to ' + roomName);
+  }
+
+function getRoomName() { // たとえば、 URLに  ?roomname  とする
+    var url = document.location.href;
+    var args = url.split('?');
+    if (args.length > 1) {
+      var room = args[1];
+      if (room != "") {
+        return room;
+      }
+    }
+    return "_defaultroom";
+  }
+
+  function onNewCanvas(message){
+    socket.emit('noticeAddCanvas',{roomName:roomName});
+  }
+
+  function onLineDrawed(message){
+    console.log('syncLineDrawed from '+message.target.from);
+
+      var targetID = 'canvasDraw'+message.target.from;
+      var messageValue = message.body.value;
+      drawTool.drawLine(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
+      drawTool.clearLocus(targetID);
+  }
+
+  function onFreeDrawed(message){
+    console.log('syncFreeDrawed from '+message.target.from);
+      var targetID = 'canvasDraw'+message.target.from;
+      var messageValue = message.body.value;
+      drawTool.resDrawCurve(targetID,messageValue.currentX,messageValue.currentY);
+        
+      if(messageValue.mouseUp){
+        drawTool.clearLocus(targetID);
+      }
+  }
+
+  function onRectDrawed(message){
+    console.log('syncRectDrawed from '+message.target.from);
+      var targetID = 'canvasDraw'+message.target.from;
+      var messageValue = message.body.value;
+      drawTool.drawRect(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
+      drawTool.clearLocus(targetID);
+  }
+
+  function onPointerDrawed(message){
+      var targetID = 'canvasDraw'+message.target.from;
+
+  }
+
+
+  function onAddCanvas(message){
+    var canvasID = message.target.from;
+    console.log(message.target.sendto);
+
+    drawTool.addCanvas(canvasID);
+    if(message.target.sendto ==null){
+
+    socket.emit('noticeAddCanvas',{roomName:roomName,sendto:message.target.from});
+    }
+  }
+
+  function onPointerDrawed(message){
+      var targetID = 'canvasDraw'+message.target.from;
+
+  }
+
+  function onPageNext(message){
+      pdfNextPage();
+  }
+
+  function onPagePrev(message){
+    pdfPrevPage();
+  }
+
+/*
+pdf初期呼び出し
+*/
+  PDFJS.getDocument('1DEX-6.pdf').then(function(pdf1) {
+  // you can now use *pdf* here
+  pdf = pdf1;
+  pdfSize = pdf.numPages;
+  pdf.getPage(pdfIndex).then(function(page) {
+  // you can now use *page* here
+
+var viewport = page.getViewport(scale);
+
+canvas = document.getElementById(pdfCanvas);
+context = canvas.getContext('2d');
+canvas.height = viewport.height;
+canvas.width = viewport.width;
+pdfWidth = canvas.width;
+pdfHeight = canvas.height;
+$('#'+myCanvasDrawID).attr({
+  width:pdfWidth,
+  Height:pdfHeight,
+});
+$('#'+myCanvasPictureID).attr({
+  width:pdfWidth,
+  Height:pdfHeight,
+});
+$('#'+myCanvasPointerID).attr({
+  width:pdfWidth,
+  Height:pdfHeight,
+});
+var renderContext = {
+  canvasContext: context,
+  viewport: viewport
+};
+page.render(renderContext);
+
+
+    });
+  });
+
+
+  function pdfNextPage(){
+    if(pdfIndex<pdf.numPages){
+      pdfIndex++;
+      pdf.getPage(pdfIndex).then(function(page){
+      var viewport = page.getViewport(scale);
+      var renderContext = {
+        canvasContext: context,
+        viewport : viewport
+      }
+      page.render(renderContext);
+    });
+    }
+  }
+
+  function pdfPrevPage(){
+    if(pdfIndex>1){
+    pdfIndex--;
+    pdf.getPage(pdfIndex).then(function(page){
+      var viewport = page.getViewport(scale);
+      var renderContext = {
+        canvasContext: context,
+        viewport : viewport
+      }
+      page.render(renderContext);
+
+    });
+    }
+  }
+
+  function pdfChangePage(pageNum){
+    if(1<=pageNum && pageNum<=pdf.numPages){
+      pdfIndex = pageNum;
+      pdf.getPage(pdfIndex).then(function(page){
+        var viewport = page.getViewport(scale);
+        var renderContext = {
+          canvasContext: context,
+          viewport : viewport
+        }
+        page.render(renderContext);
+      });
+    }
+  }
+
+
+/*
+$('#the-canvas').click(function(e){
+  var canvas = document.getElementById('the-canvas');
+  var ctx = canvas.getContext('2d');
+  drawTool.drawCurve(ctx,e.pageX,e.pageY);
+});
+*/
+
+/*
+切り替えツール
+*/
+$('#free_button').click(function(e){
+  //自由線 0a
+  console.log('mode change 0');
+  drawTool.mode=0;
+});
+$('#line_button').click(function(e){
+  //固定線 1
+  console.log('mode change 1');
+  drawTool.mode=1;
+});
+$('#rect_button').click(function(e){
+  //四角線 2
+  console.log('mode change 2');
+  drawTool.mode=2;
+});
+$('#circle_button').click(function(e){
+  //円 3
+  console.log('mode change 3');
+  drawTool.mode=3;
+});
+$('#text_button').click(function(e){
+  //テキスト 4
+  console.log('mode change 4');
+  drawTool.mode=4;
+});
+$('#back_button').click(function(e){
+  console.log('back');
+  drawTool.popStatus();
+});
+$('#back_button').click(function(e){
+  console.log('back');
+  drawTool.popStatus();
+});
+$('#next_button').click(function(e){
+  console.log('back');
+  //TODO ページめくり
+  pdfNextPage();
+  socket.json.emit('noticeNextPage',{
+      roomName:roomName
+  });
+});
+$('#prev_button').click(function(e){
+  console.log('back');
+  //TODO ページめくり
+  pdfPrevPage();
+
+  socket.json.emit('noticePrevPage',{
+      roomName:roomName
+  });
+});
+$('#ponter_button').click(function(e){
+  console.log('pointer');
+  console.log('mode change 5');
+  drawTool.mode=5;
+  //TODO Z-indexの変更
+});
+
+
 
 //初期リスナーセット
 //全般的に初期化
