@@ -20,7 +20,7 @@
    -->
    <div id="item_area" style="width:1000px;height:1000px;">
 
-   <video id="local-video" autoplay style="width: 240px; height: 180px; border: 1px solid red;position:absolute;margin:0px 0px 0px 0px;z-index: 0;"></video>
+   <video id="local-video" autoplay style="width: 240px; height: 180px; border: 1px solid black;position:absolute;margin:0px 0px 0px 0px;z-index: 0;"></video>
 
   </div>
   
@@ -79,6 +79,8 @@
   var myCenterY=0;
   var centerX = new Array();
   var centerY = new Array();
+  var userVideoCount =0;
+  var userVideoColor={};
   //$('#start_button').click(startVideo);
   //$('#stop_button').click(stopVideo);
   //$('#call_button').click(call);
@@ -134,15 +136,46 @@
   }
 
   function generateItemWithId(id){
+    userVideoColor[id] = getUserColor();
     var itemHtml = 
     '<video id="'+id+'"'+
-    'autoplay style="width:240px;height:180px;border:1px solid black;position:absolute;margin:0px 0px 0px 0px;zIndex:1;">';
-    $('#item_area').append(itemHtml);
+    'autoplay style="width:240px;height:180px;position:absolute;margin:0px 0px 0px 0px;zIndex:1;">';
 
+    $('#item_area').append(itemHtml);
+    var elm = document.getElementById(id);
+    elm.style.border = '3px solid '+userVideoColor[id];
     socket.emit('initializeVideoPosition',{roomName:roomName});
     //$('#'+id).draggable();
     return document.getElementById(id);
   }
+
+  function getUserColor(){
+      userVideoCount = userVideoCount % MAX_CONNECTION_COUNT;//6
+      switch(userVideoCount++){
+        case 0:
+          return 'red';
+        break;
+        case 1:
+          return 'blue';
+        break;
+        case 2:
+          return 'green';
+        break;
+        case 3:
+          return 'gray';
+        break;
+        case 4:
+          return 'orange';
+        break;
+        case 5:
+          return 'purple';
+        break;
+        default:
+          return 'black';
+        break;
+      }
+  }
+
 
   function attachVideo(id, stream) {
     console.log('try to attach video. id=' + id);
@@ -211,7 +244,7 @@
   }
 
   // -------------- multi connections --------------------
-  var MAX_CONNECTION_COUNT = 3;
+  var MAX_CONNECTION_COUNT = 6;
   var connections = {}; // Connection hash
   function Connection() { // Connection Class
     var self = this;
