@@ -1,76 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Viewer</title>  
-
-  <script type="text/javascript" src="./jquery-ui-1.11.4/external/jquery/jquery.js"></script>
-  <script type="text/javascript" src="./jquery-ui-1.11.4/jquery-ui.min.js"></script>
-  <script type="text/javascript" src="./pdfjs-1.1.215-dist/build/pdf.js"></script>
-</head>
-<body>
-
-  <div id="mode_button" style="height:30px;">
-    <input id="free_button" type="button" value="F">
-    <input id="line_button" type="button" value="L">
-    <input id="rect_button" type="button" value="R">
-    <input id="text_button" type="button" value="T">
-    <input id="circle_button" type="button" value="C">
-    <input id="back_button" type="button" value="B">
-    <input id="next_button" type="button" value=">">
-    <input id="prev_button" type="button" value="<">
-    <input id="pointer_button" type="button" value="P">
-
-  </div>
-  <div id="canvasBox">
-     <canvas id="pdfCanvas" style="background-color:transparent;position: absolute;z-index: 1;"></canvas>
-     <canvas id="myCanvasPicture" style="background-color:transparent;position: absolute;z-index: 2;"></canvas>
-     <canvas id="myCanvasPointer" style="background-color:transparent;position: absolute;z-index: 3;"></canvas>
-     <canvas id="myCanvasDraw" style="background-color:transparent;position: absolute;z-index: 4;"></canvas>
-  
-  </div>
-
-
-  <script src="http://133.68.112.180:9001/socket.io/socket.io.js"></script>
-<!--
-  <script src="http://127.0.0.1:9001/socket.io/socket.io.js"></script>  
-  <-->
-
-<script>
-
-/*
-システム
-PDFファイルすべてのページのCanvasを用意する
-入れ替えイベントが起きたら，各ユーザのCanvasを入れ替える
-自身の描画のみ消すことができる
-人数分それに対応するCanvasを用意
-描画の同期イベントは対応するIDでCanvasを選択し描画
-*/
 $(function(){
 
-  var canvas;
-  var context;
+  
 
-  var pdfCanvas = 'pdfCanvas';
-  var myCanvasDrawID='myCanvasDraw';
-  var myCanvasPictureID='myCanvasPicture';
-  var myCanvasPointerID='myCanvasPointer';
-  var canvasStatus=[];
-  var currentPageNumber;
-  var pushing=false;
-  var PDF;
-  //PDF生成のタイミングで取得やるとCanvasの大きさがめちゃくちゃになる
-  //TODO ヒューリスティクス->自動化
-  var pdf;
-  var pdfSize;
-  var pdfWidth=594;
-  var pdfHeight=842;
-  var pdfIndex =1;
-  var scale=1.0;
-  var roomName = 'default';
-  var socketReady = false;
-  var port = 9001;
-  var socket = io.connect('http://133.68.112.180:' +  port + '/');
-  //var socket = io.connect('http://127.0.0.1:' + port + '/');
   
 
 
@@ -450,29 +381,7 @@ $('#'+canvasID).mouseup(function(e){
 
        });
   }
-  /*
-  socket.ioハンドラ
-  */
-  // socket: channel connected
-  
-  socket.on('connect', onOpened)
-        .on('syncLine',onLineDrawed)
-        .on('syncFree',onFreeDrawed)
-        .on('syncRect',onRectDrawed)
-        .on('syncPointer',onPointerDrawed)
-        .on('addCanvas',onAddCanvas)
-        .on('pageNext',onPageNext)
-        .on('pagePrev',onPagePrev);
-  
-  function onOpened(evt) {
-    console.log('socket opened.');
-    socketReady = true;
-  
-    roomName = getRoomName(); // 会議室名を取得する
-   socket.emit('enter', roomName);
-   socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null});
-  console.log('enter to ' + roomName);
-  }
+ 
 
 function getRoomName() { // たとえば、 URLに  ?roomname  とする
     var url = document.location.href;
@@ -713,7 +622,3 @@ drawTool[myCanvasDrawID].oldPointX=null;
 drawTool[myCanvasDrawID].oldPointY=null;
 
 });
-
-  </script>
-</body>
-</html>

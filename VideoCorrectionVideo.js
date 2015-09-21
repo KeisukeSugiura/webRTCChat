@@ -1,58 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>WebRTC 4</title>  
-  <script src="jquery-1.11.3.min.js"></script>
-  <script src="jquery-ui-1.11.4/jquery-ui.min.js"></script>
-</head>
-<body>
- <!-- <button id="start_button" type="button">Start video</button>
-  <button id="stop_button" type="button">Stop video</button>
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <button type="button" onclick="connect();">Connect</button> 
-  <button id="call_button" type="button">Connect</button>
-  <button id="hangup_button" type="button">Hang Up</button>
-  -->
-   <!-- <video id="remote-video" autoplay style="width: 240px; height: 180px; border: 1px solid black;"></video> -->
-  <!-- <video id="webrtc-remote-video-0" autoplay style="position: absolute; top: 250px; left: 0px; width: 320px; height: 240px; border: 1px solid black; "></video>
-   <video id="webrtc-remote-video-1" autoplay style="position: absolute; top: 250px; left: 330px; width: 320px; height: 240px; border: 1px solid black; "></video>
-   <video id="webrtc-remote-video-2" autoplay style="position: absolute; top: 0px; left: 330px; width: 320px; height: 240px; border: 1px solid black; " ></video>
-   -->
-   <div id="item_area" style="width:1000px;height:1000px;">
 
-   <video id="local-video" autoplay style="width: 240px; height: 180px; border: 1px solid black;position:absolute;margin:0px 0px 0px 0px;z-index: 0;"></video>
-
-  </div>
-  
-  <!---
-  <p>
-   SDP to send:<br />
-   <textarea id="text-for-send-sdp" rows="5" cols="100" disabled="1">SDP to send</textarea>
-  </p>
-  <p>
-   SDP to receive:<br />
-   <textarea id="text-for-receive-sdp" rows="5" cols="100"></textarea><br />
-   <button type="button" onclick="onSDP();">Receive SDP</button>
-  </p>
-  
-  <p>
-   ICE Candidate to send:<br />
-   <textarea id="text-for-send-ice" rows="5" cols="100" disabled="1">ICE Candidate to send</textarea>
-  </p>
-  <p>  
-   ICE Candidates to receive:<br />
-   <textarea id="text-for-receive-ice" rows="5" cols="100"></textarea><br />
-   <button type="button" onclick="onICE();">Receive ICE Candidates</button>
-  </p>
-  --->
-  
-  <!---- socket ------>
-
-  <script src="http://133.68.112.180:9001/socket.io/socket.io.js"></script>
-
- <!-- <script src="http://127.0.0.1:9001/socket.io/socket.io.js"></script>  
--->
-  <script>
   $(function(){
     var localVideo = document.getElementById('local-video');
     $('#local-video').draggable({
@@ -332,26 +278,7 @@
 
   
   // ---- socket ------
-  // create socket
-  var socketReady = false;
-  var port = 9001;
-  var socket = io.connect('http://133.68.112.180:' + port + '/');
-  //var socket = io.connect('http://127.0.0.1:' + port + '/');
-  // socket: channel connected
-  socket.on('connect', onOpened)
-        .on('signaling', onMessage)
-        .on('changeVideoPosition',onPositionChanged)
-        .on('initializeVideoPosition',onPositionInitialize);
-
-  function onOpened(evt) {
-    console.log('socket opened.');
-    socketReady = true;
-	
-    roomName = getRoomName(); // 会議室名を取得する
-   socket.emit('enter', roomName);
-	console.log('enter to ' + roomName);
-  }
-
+  
   // socket: accept connection request
   function onMessage(evt) {
     var id = evt.target.from;
@@ -736,8 +663,3 @@
   }
   --*/
 });
-
-  
-  </script>
-</body>
-</html>
