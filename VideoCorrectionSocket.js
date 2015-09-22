@@ -1,8 +1,8 @@
 $(function(){
   var socketReady = false;
   var port = 9001;
-  var socket = io.connect('http://133.68.112.180:' +  port + '/');
-  //var socket = io.connect('http://127.0.0.1:' + port + '/');
+  //var socket = io.connect('http://133.68.112.180:' +  port + '/');
+  var socket = io.connect('http://127.0.0.1:' + port + '/');
   //
   //
 
@@ -37,11 +37,14 @@ $(function(){
         .on('syncLine',onLineDrawed)
         .on('syncFree',onFreeDrawed)
         .on('syncRect',onRectDrawed)
+        .on('syncCircle',onCircleDrawed)
         .on('syncPointer',onPointerDrawed)
         .on('addCanvas',onAddCanvas)
+        .on('clearPointerCanvas',onClearPointerCanvas)
+        .on('syncBackCanvas',onBackCanvas)
         .on('pageNext',onPageNext)
         .on('pagePrev',onPagePrev)
-         .on('signaling', onMessage)
+        .on('signaling', onMessage)
         .on('changeVideoPosition',onPositionChanged)
         .on('initializeVideoPosition',onPositionInitialize);
   
@@ -96,9 +99,6 @@ var drawTool = (function(){
       ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
       ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
       //ctx.closePath();
-      
-      ctx.strokeStyle="red";
-      ctx.lineWidth=5;
       ctx.stroke();
     
      
@@ -120,15 +120,12 @@ var drawTool = (function(){
       ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
       ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
       //ctx.closePath();
-      
-      ctx.strokeStyle="red";
-      ctx.lineWidth=5;
       ctx.stroke();
     
       module.updateLocus(canvasID,cx,cy);
     }else{
-      console.log('old X : '+module[canvasID].oldPointX);
-      console.log('semi X : '+module[canvasID].semiOldPointX);
+     // console.log('old X : '+module[canvasID].oldPointX);
+     // console.log('semi X : '+module[canvasID].semiOldPointX);
       module.updateLocus(canvasID,cx,cy);
     }
   };
@@ -165,6 +162,45 @@ var drawTool = (function(){
     ctx.stroke();
   };
 
+  module.drawCircle = function(canvasID,cx1,cy1,cx2,cy2){
+    var cav = document.getElementById(canvasID);
+    var ctx = cav.getContext('2d');
+    ctx.beginPath();
+    ctx.arc((cx1+cx2)/2,(cy1+cy2)/2,
+      Math.sqrt((cx1-cx2)*(cx1-cx2)+(cy1-cy2)*(cy1-cy2))/2,0,Math.PI*2,true);
+    ctx.stroke();
+  }
+
+  module.drawPointer = function(canvasID,cx,cy,ux,uy){
+    //ux,uyにはつなぐ点四角の左側の中央の座標を入れる
+    var cav = document.getElementById(canvasID);
+    var ctx = cav.getContext('2d');
+    console.log(ux);
+   
+    //ctx.strokeRect(ux-5,uy-95,250,190);
+    ctx.beginPath();
+    ctx.moveTo(ux-5,uy);
+    ctx.lineTo(cx,cy);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ux-5,uy-95);
+    ctx.lineTo(ux-5+255,uy-95);
+    ctx.lineTo(ux-5+255,uy-95+195);
+    ctx.lineTo(ux-5,uy-95+195);
+    ctx.lineTo(ux-5,uy-95);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx,cy,4,0,Math.PI*2,true);
+    ctx.stroke();
+  }
+
+  module.clearCanvas = function(canvasID){
+    var cav = document.getElementById(canvasID);
+    var ctx = cav.getContext('2d');
+    ctx.clearRect(cav.style.left,cav.style.right,cav.width,cav.height);
+  };
 
   module.updateLocus = function(canvasID,cx,cy){
     module[canvasID].oldPointX = module[canvasID].semiOldPointX;
@@ -218,16 +254,18 @@ var drawTool = (function(){
 
     newElement1.width = pdfWidth;
     newElement2.width = pdfWidth;
-    newElement3.width = pdfWidth;
+    newElement3.width = pdfWidth+1000;
 
     newElement1.height = pdfHeight;
     newElement2.height = pdfHeight;
     newElement3.height = pdfHeight;
 
-    var canvasBox = document.getElementById('canvasBox');
-    canvasBox.appendChild(newElement1);
-    canvasBox.appendChild(newElement2);
-    canvasBox.appendChild(newElement3);
+    var pictureBox = document.getElementById('pictureBox');
+    var pointerBox = document.getElementById('pointerBox');
+    var drawBox = document.getElementById('drawBox');
+    drawBox.appendChild(newElement1);
+    pictureBox.appendChild(newElement2);
+    pointerBox.appendChild(newElement3);
     $('#canvasDraw'+canvasID).css({
         backgroundColor:'transparent',
         zIndex:2,
@@ -288,9 +326,22 @@ $('#'+canvasID).mousedown(function(e){
     break;
     case 3:
     //円
+    module.updateLocus(canvasID,e.pageX-5,e.pageY-30);
     break;
     case 4:
     //テキスト
+    break;
+    case 5:
+    //ポインタ
+    module.clearCanvas(canvasID);
+    module.drawPointer(canvasID,e.pageX-5,e.pageY-30,$('#local-video').offset().left-10,$('#local-video').offset().top+90-40);
+    socket.json.emit('noticePointerDrawed',{
+      roomName:roomName,
+      cx:e.pageX-5,
+      cy:e.pageY-30,
+      ux:$('#local-video').offset().left-10,
+      uy:$('#local-video').offset().top+90-40
+    });
     break;
   }
 });
@@ -319,6 +370,18 @@ $('#'+canvasID).mousemove(function(e){
     break;
     case 4:
     //テキスト
+    break;
+    case 5:
+    //ポインタ
+   module.clearCanvas(canvasID);
+    module.drawPointer(canvasID,e.pageX-5,e.pageY-30,$('#local-video').offset().left-10,$('#local-video').offset().top+90-40);
+    socket.json.emit('noticePointerDrawed',{
+      roomName:roomName,
+      cx:e.pageX-5,
+      cy:e.pageY-30,
+      ux:$('#local-video').offset().left-10,
+      uy:$('#local-video').offset().top+90-40
+    });
     break;
   }
   }
@@ -366,11 +429,32 @@ $('#'+canvasID).mouseup(function(e){
     break;
     case 3:
     //円
+    module.drawCircle(canvasID,e.pageX-5,e.pageY-30,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY);
+    
+    socket.json.emit('noticeCircleDrawed',{
+      roomName:roomName,
+      cx1:e.pageX-5,
+      cy1:e.pageY-30,
+      cx2:module[canvasID].semiOldPointX,
+      cy2:module[canvasID].semiOldPointY
+    });
     module.clearLocus(canvasID);
     break;
     case 4:
     //テキスト
     module.clearLocus(canvasID);
+    break;
+    case 5:
+    //ポインタ
+    module.clearCanvas(canvasID);
+    socket.json.emit('noticeClearPointerCanvas',{
+      roomName:roomName,
+      cx:e.pageX-5,
+      cy:e.pageY-30,
+      ux:$('#local-video').offset().left-10,
+      uy:$('#local-video').offset().top+90-40
+    });
+    pushing = false;
     break;
   }
 });
@@ -489,9 +573,18 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
       drawTool.clearLocus(targetID);
   }
 
-  function onPointerDrawed(message){
-      var targetID = 'canvasDraw'+message.target.from;
+  function onCircleDrawed(message){
+    console.log('syncCircleDrawed from '+message.target.from);
+    var targetID = 'canvasDraw'+message.target.from;
+    var messageValue = message.body.value;
+    drawTool.drawCircle(targetID,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
+  }
 
+  function onPointerDrawed(message){
+      var targetID = 'canvasPointer'+message.target.from;
+      var messageValue = message.body.value;
+      drawTool.clearCanvas(targetID);
+      drawTool.drawPointer(targetID,messageValue.cx,messageValue.cy,messageValue.ux,messageValue.uy);
   }
 
 
@@ -506,9 +599,15 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
     }
   }
 
-  function onPointerDrawed(message){
-      var targetID = 'canvasDraw'+message.target.from;
+  function onClearPointerCanvas(message){
+      var targetID = 'canvasPointer'+message.target.from;
+      drawTool.clearCanvas(targetID);
+  }
 
+  function onBackCanvas(message){
+      var targetID = 'canvasDraw'+message.target.from;
+      var messageValue = message.body.value;
+      //drawTool.pop();
   }
 
   function onPageNext(message){
@@ -592,10 +691,10 @@ page.render(renderContext);
   function pdfChangePage(pageNum){
     if(1<=pageNum && pageNum<=pdf.numPages){
       pdfIndex = pageNum;
-      pdf.getPage(pdfIndex).then(function(page){
+      pdf.getPage(pageIndex).then(function(page){
         var viewport = page.getViewport(scale);
         var renderContext = {
-          canvasContext: context,
+          canvasContext: context,//初期のやつ入れ替えてる
           viewport : viewport
         }
         page.render(renderContext);
@@ -603,7 +702,200 @@ page.render(renderContext);
     }
   }
 
+  function pdfDownload(pageNum){
+      if(1<= pageNum && pageNum<=pdf.numPages){
+       var options = {
+           orientation: "p",
+           unit: "pt",
+           format: "a4"
+        };
+        var doc = new jsPDF(options,'','','');
+        //var imgdata = canvas.toDataURL('image/png');
+        //doc.addImage(imgdata,'png',canvas.style.left,canvas.style.top,canvas.widht,canvas.height);
+        var imgdata = canvas.toDataURL('image/png');
+        //doc.save('sample.pdf');
+        console.log(imgdata);
 
+        var img = new Image();
+        img.onload=function(){
+             doc.addImage(img,'png',canvas.style.left,canvas.style.top,canvas.width,canvas.height);
+        //doc.output('datauri');
+        doc.save('sample.pdf');
+        }
+
+        img.src = imgdata;
+      }
+  }
+
+  function pdfOutputOne(canvasItem){
+    var options = {
+           orientation: "p",
+           unit: "pt",
+           format: "a4"
+        };
+        var doc = new jsPDF(options,'','','');
+        //var imgdata = canvas.toDataURL('image/png');
+        //doc.addImage(imgdata,'png',canvas.style.left,canvas.style.top,canvas.widht,canvas.height);
+        var imgdata = canvasItem.toDataURL('image/png');
+        //doc.save('sample.pdf');
+        console.log(imgdata);
+
+        var img = new Image();
+        img.onload=function(){
+             doc.addImage(img,'png',canvasItem.style.left,canvasItem.style.top,canvasItem.width,canvasItem.height);
+        //doc.output('datauri');
+        doc.save('sample.pdf');
+        }
+
+        img.src = imgdata;
+       
+  }
+
+  function pdfShogaDownload(pageNum,doc,callback){
+      console.log(pageNum);
+     if(1<=pageNum && pageNum<= pdf.numPages){
+      pdf.getPage(pageNum).then(function(page){
+        var viewport = page.getViewport(scale);
+
+        var cav = document.createElement('canvas');
+        var ctx = cav.getContext('2d');
+        //cav.width = viewport.width;
+        //cav.height =　viewport.height;
+        cav.height = pdfHeight;
+        cav.width = pdfWidth;
+        var renderContext = {
+          canvasContext:ctx,
+          viewport :viewport
+        }
+
+        var renderTask = page.render(renderContext);
+
+
+        renderTask.promise.then(function () {
+          console.log('ok');
+        ctx.fillStyle='red';
+        ctx.fillRect(0,0,50,50);
+        ctx.fillRect(cav.width-50,0,50,50);
+        ctx.fillRect(0,cav.height-50,50,50);
+        /*
+        var options = {
+           orientation: "p",
+           unit: "pt",
+           format: "a4"
+        };
+        var doc = new jsPDF(options,'','','');
+        */
+        //var imgdata = canvas.toDataURL('image/png');
+        //doc.addImage(imgdata,'png',canvas.style.left,canvas.style.top,canvas.widht,canvas.height);
+        var imgdata = cav.toDataURL('image/png');
+        //doc.save('sample.pdf');
+        console.log(imgdata);
+
+        var img = new Image();
+        img.onload=function(){
+             doc.addImage(img,'png',canvas.style.left,canvas.style.top,canvas.width,canvas.height);
+        //doc.output('datauri');
+       //doc.save('dample.pdf');
+       if(pageNum== pdf.numPages){
+        doc.save('shoga.pdf');
+       }else{
+        doc.addPage();
+       }
+        callback();
+        }
+
+        img.src = imgdata;
+        });
+
+        
+      });
+    }
+  }
+
+  function pdfShogaDownloadMulti(){
+        
+        var options = {
+           orientation: "p",
+           unit: "pt",
+           format: "a4"
+        };
+        var doc = new jsPDF(options,'','','');
+        
+          var i = 1;
+          var ar = new Array();
+          for(i=1;i<=pdf.numPages;i++){
+            ar.push(i);
+          }
+
+          async.each(ar,function(value,callback){
+              console.log(value);
+              pdfShogaDownload(value,doc,callback);
+          });
+        /*
+        for(i=1;i<=pdf.namPages;i++){
+          console.log(i);
+          pdfShogaDownload(i,doc);
+          if(i==pdf.numPages){
+            break;
+          }else{
+            doc.addPage();
+          }
+        }
+        */
+       // doc.save('sample.pdf');
+  }
+
+  function unionCanvas(){
+    var editCanvas = document.createElement('canvas');
+    editCanvas.width = pdfWidth;
+    editCanvas.height = pdfHeight;
+    var editCtx = editCanvas.getContext('2d');
+    var drawBoxChildren = document.getElementById('drawBox').children;
+    var pictureBoxChildren =document.getElementById('pictureBox').children;
+    var unionList = new Array();
+    var pdfCav = document.getElementById('pdfCanvas');
+    unionList.push(pdfCav);
+    for(var i=0;i<drawBoxChildren.length;i++){
+      unionList.push(drawBoxChildren[i]);
+    }
+    for(var j=0;j<pictureBoxChildren.length;j++){
+      unionList.push(pictureBoxChildren[j]);
+    }
+    
+    var func1 = function(done){
+      async.each(unionList,function(value,callback){
+        console.log(value);
+        drawImageCanvas(value,editCanvas,callback);
+      });  
+      done(null,'val');
+    }
+    async.waterfall([
+      func1
+      ],function(err,result){
+
+        if(err){
+          console.error(err);
+        }else{
+          pdfOutputOne(editCanvas);
+        }
+      });
+
+
+
+  }
+
+  function drawImageCanvas(canvasItem,eCanvas,callback){
+    var img = new Image();
+    var imgUrl = canvasItem.toDataURL('image/png');
+    var pdfctx = eCanvas.getContext('2d');
+    img.onload=function(){
+      pdfctx.drawImage(img,0,0);
+      console.log(imgUrl);
+      callback();
+    }
+    img.src = imgUrl;
+
+  }
 /*
 $('#the-canvas').click(function(e){
   var canvas = document.getElementById('the-canvas');
@@ -619,30 +911,74 @@ $('#free_button').click(function(e){
   //自由線 0a
   console.log('mode change 0');
   drawTool.mode=0;
+  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasP = document.getElementById(myCanvasPointerID);
+  var drawBox = document.getElementById('drawBox');
+  var pointerBox = document.getElementById('pointerBox');
+  pointerBox.style.zIndex=3;
+  drawBox.style.zIndex=4;
+  myCanvasD.style.zIndex=4;
+  myCanvasP.style.zIndex=3;
+  myCanvasP.width= pdfWidth;
+
 });
 $('#line_button').click(function(e){
   //固定線 1
   console.log('mode change 1');
   drawTool.mode=1;
+  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasP = document.getElementById(myCanvasPointerID);
+  var drawBox = document.getElementById('drawBox');
+  var pointerBox = document.getElementById('pointerBox');
+  pointerBox.style.zIndex=3;
+  drawBox.style.zIndex=4;
+  myCanvasD.style.zIndex=4;
+  myCanvasP.style.zIndex=3;
+  myCanvasP.width= pdfWidth;
 });
 $('#rect_button').click(function(e){
   //四角線 2
   console.log('mode change 2');
   drawTool.mode=2;
+  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasP = document.getElementById(myCanvasPointerID);
+  var drawBox = document.getElementById('drawBox');
+  var pointerBox = document.getElementById('pointerBox');
+  pointerBox.style.zIndex=3;
+  drawBox.style.zIndex=4;
+  myCanvasD.style.zIndex=4;
+  myCanvasP.style.zIndex=3;
+  myCanvasP.width= pdfWidth;
 });
 $('#circle_button').click(function(e){
   //円 3
   console.log('mode change 3');
   drawTool.mode=3;
+  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasP = document.getElementById(myCanvasPointerID);
+  var drawBox = document.getElementById('drawBox');
+  var pointerBox = document.getElementById('pointerBox');
+  pointerBox.style.zIndex=3;
+  drawBox.style.zIndex=4;
+  myCanvasD.style.zIndex=4;
+  myCanvasP.style.zIndex=3;
+  myCanvasP.width= pdfWidth;
 });
 $('#text_button').click(function(e){
   //テキスト 4
   console.log('mode change 4');
   drawTool.mode=4;
-});
-$('#back_button').click(function(e){
-  console.log('back');
-  drawTool.popStatus();
+
+  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasP = document.getElementById(myCanvasPointerID);
+  var drawBox = document.getElementById('drawBox');
+  var pointerBox = document.getElementById('pointerBox');
+  pointerBox.style.zIndex=3;
+  drawBox.style.zIndex=4;
+  myCanvasD.style.zIndex=4;
+  myCanvasP.style.zIndex=3;
+  myCanvasP.width= pdfWidth;
+
 });
 $('#back_button').click(function(e){
   console.log('back');
@@ -665,24 +1001,44 @@ $('#prev_button').click(function(e){
       roomName:roomName
   });
 });
-$('#ponter_button').click(function(e){
+$('#pointer_button').click(function(e){
   console.log('pointer');
   console.log('mode change 5');
   drawTool.mode=5;
-  //TODO Z-indexの変更
+  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasP = document.getElementById(myCanvasPointerID);
+  var drawBox = document.getElementById('drawBox');
+  var pointerBox = document.getElementById('pointerBox');
+  pointerBox.style.zIndex=4;
+  drawBox.style.zIndex=3;
+  myCanvasD.style.zIndex=3;
+  myCanvasP.style.zIndex=4;
+  myCanvasP.width= pdfWidth+1000;
 });
-
+$('#download_button').click(function(e){
+    unionCanvas();
+  console.log('donwload');
+});
+$('#shoga_download_button').click(function(e){
+    pdfShogaDownloadMulti();
+  console.log('shoga download');
+});
 
 
 //初期リスナーセット
 //全般的に初期化
 drawTool.setEventListener(myCanvasDrawID);
+drawTool.setEventListener(myCanvasPointerID);
 drawTool[myCanvasDrawID] = {};
 drawTool[myCanvasDrawID].semiOldPointX=null;
 drawTool[myCanvasDrawID].semiOldPointY=null;
 drawTool[myCanvasDrawID].oldPointX=null;
 drawTool[myCanvasDrawID].oldPointY=null;
-
+drawTool[myCanvasPointerID] = {};
+drawTool[myCanvasPointerID].semiOldPointX=null;
+drawTool[myCanvasPointerID].semiOldPointY=null;
+drawTool[myCanvasPointerID].oldPointX=null;
+drawTool[myCanvasPointerID].oldPointY=null;
 
 
 /**
@@ -703,11 +1059,11 @@ drawTool[myCanvasDrawID].oldPointY=null;
         containment:'parent'
     });
     $('#item_area').dblclick(function(e){
-      if($('#local-video').zIndex()== 0){
+      if($('#local-video').zIndex()== 5){
         $('#local-video').zIndex(10);
       }
       else{
-        $('#local-video').zIndex(0);
+        $('#local-video').zIndex(5);
       }
     });
 
@@ -782,7 +1138,7 @@ drawTool[myCanvasDrawID].oldPointY=null;
     userVideoColor[id] = getUserColor();
     var itemHtml = 
     '<video id="'+id+'"'+
-    'autoplay style="width:240px;height:180px;position:absolute;margin:0px 0px 0px 0px;zIndex:1;">';
+    'autoplay style="width:240px;height:180px;position:absolute;-webkit-transform: scaleX(-1);margin:0px 0px 0px 0px;zIndex:1;">';
 
     $('#item_area').append(itemHtml);
     var elm = document.getElementById(id);

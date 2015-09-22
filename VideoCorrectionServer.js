@@ -90,6 +90,30 @@ io.sockets.on('connection', function(socket) {
       emitMessage('syncRect',sendObj)
   });
 
+  socket.on('noticeCircleDrawed',function(message){
+      var sendObj={
+      body:{type:'syncCircle',value:message},
+      target:{from:socket.id,sendto:null,roomName:message.roomName}
+    }
+      emitMessage('syncCircle',sendObj)
+  });
+
+  socket.on('noticePointerDrawed',function(message){
+      var sendObj={
+      body:{type:'syncPointer',value:message},
+      target:{from:socket.id,sendto:null,roomName:message.roomName}
+    }
+      emitMessage('syncPointer',sendObj)
+  });
+
+  socket.on('noticeClearPointerCanvas',function(message){
+      var sendObj={
+      body:{type:'clearPointerCanvas',value:message},
+      target:{from:socket.id,sendto:null,roomName:message.roomName}
+    }
+      emitMessage('clearPointerCanvas',sendObj)
+  });
+
   socket.on('noticeAddCanvas',function(message){
       var sendObj={
       body:{type:'addCanvas',value:message},
@@ -99,6 +123,14 @@ io.sockets.on('connection', function(socket) {
          io.sockets.to(message.sendto).emit('signaling', sendObj);
       }
       emitMessage('addCanvas',sendObj)
+  });
+
+  socket.on('noticeBackCanvas',function(message){
+      var sendObj={
+      body:{type:'syncBackCanvas',value:message},
+      target:{from:socket.id,sendto:null,roomName:message.roomName}
+    }
+      emitMessage('syncBackCanvas',sendObj)
   });
 
     socket.on('noticeNextPage',function(message){
