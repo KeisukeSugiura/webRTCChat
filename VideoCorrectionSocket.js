@@ -15,6 +15,7 @@ $(function(){
   var myCanvasPictureID='myCanvasPicture';
   var myCanvasPointerID='myCanvasPointer';
   var canvasStatus=[];
+  var canvasContainer = new Array();
   var currentPageNumber;
   var pushing=false;
   var PDF;
@@ -179,7 +180,7 @@ var drawTool = (function(){
     //ux,uyにはつなぐ点四角の左側の中央の座標を入れる
     var cav = document.getElementById(canvasID);
     var ctx = cav.getContext('2d');
-    console.log(ux);
+    console.log(cav);
    
     //ctx.strokeRect(ux-5,uy-95,250,190);
     ctx.beginPath();
@@ -228,8 +229,8 @@ var drawTool = (function(){
     //TODO 自分の分と相手の分，どのように管理するのか
     //ans TODO 各ユーザごとにcanvasを追加する
     //
-      var myContext = document.getElementById(myCanvasDrawID).getContext('2d');
-      canvasStatus.push(myContext.getImageData($('#'+myCanvasDrawID).offset().left,$('#'+myCanvasDrawID).offset().top,$('#'+myCanvasDrawID).width(),$('#'+myCanvasDrawID).height()));
+      var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
+      canvasStatus.push(myContext.getImageData($('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID+String(pdfIndex)).offset().top,$('#'+myCanvasDrawID+String(pdfIndex)).width(),$('#'+myCanvasDrawID+String(pdfIndex)).height()));
   };
 
 
@@ -239,79 +240,61 @@ var drawTool = (function(){
   module.popStatus = function(){
     //TODO 各ユーザごとにcanvasを持たせておき,対応するcanvasStatusをpopする
     //
-      var myContext = document.getElementById(myCanvasDrawID).getContext('2d');
+      var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
     var poped=canvasStatus.pop();
     if(poped){
-     myContext.putImageData(poped,$('#'+myCanvasDrawID).offset().left,$('#'+myCanvasDrawID).offset().top);
+     myContext.putImageData(poped,$('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID).offset().top);
     }
   };
 
 
   module.addCanvas= function(canvasID){
-    var newElement1 = document.createElement('canvas');
-    var newElement2 = document.createElement('canvas');
     var newElement3 = document.createElement('canvas');
 
-    newElement1.id='canvasDraw'+canvasID;
-    newElement2.id='canvasPicture'+canvasID;
     newElement3.id='canvasPointer'+canvasID;
 
-    newElement1.width = pdfWidth;
-    newElement2.width = pdfWidth;
     newElement3.width = pdfWidth+1000;
 
-    newElement1.height = pdfHeight;
-    newElement2.height = pdfHeight;
     newElement3.height = pdfHeight;
+
+    newElement3.style.zIndex=3;
+
+    newElement3.style.position='absolute';
 
     var pictureBox = document.getElementById('pictureBox');
     var pointerBox = document.getElementById('pointerBox');
     var drawBox = document.getElementById('drawBox');
-    drawBox.appendChild(newElement1);
-    pictureBox.appendChild(newElement2);
-    pointerBox.appendChild(newElement3);
-    $('#canvasDraw'+canvasID).css({
-        backgroundColor:'transparent',
-        zIndex:2,
-        position:'absolute'
-    });
-    $('#canvasPicture'+canvasID).css({
-        backgroundColor:'transparent',
-        zIndex:2,
-        position:'absolute'
-    });
-    $('#canvasPointer'+canvasID).css({
-        backgroundColor:'transparent',
-        zIndex:3,
-        position:'absolute'
-    });
+    //drawBox.appendChild(newElement1);
+    //pictureBox.appendChild(newElement2);
+    //pointerBox.appendChild(newElement3);
 
-    
-    var ectx1 = newElement1.getContext('2d');
-    var ectx2 = newElement2.getContext('2d');
     var ectx3 = newElement3.getContext('2d');
     
     if(!userVideoColor[canvasID]){
     userVideoColor[canvasID] = getUserColor();
     }
-    console.log(typeof userVideoColor[canvasID]);
-
-    ectx1.strokeStyle=String(userVideoColor[canvasID]);
-    ectx1.fillStyle=String(userVideoColor[canvasID]);
     ectx3.fillStyle=String(userVideoColor[canvasID]);
     ectx3.strokeStyle=String(userVideoColor[canvasID]);
 
 
+    async.waterfall([function(done){
+      generateCanvasList(canvasID);
+      done();
+    }],function(eff){
+      drawBox.appendChild(canvasContainer[pdfIndex].draw[canvasID]);
+      pictureBox.appendChild(canvasContainer[pdfIndex].picture[canvasID]);
+      pointerBox.appendChild(newElement3);
+    });
+
+    //いるたぶん
+    module['canvasDraw'+canvasID+String(pdfIndex)] = {};
+    module['canvasDraw'+canvasID+String(pdfIndex)].semiOldPointY=null;
+    module['canvasDraw'+canvasID+String(pdfIndex)].semiOldPointX=null;
+    module['canvasDraw'+canvasID+String(pdfIndex)].oldPointX=null;
+    module['canvasDraw'+canvasID+String(pdfIndex)].oldPointY=null;
 
 
-    module['canvasDraw'+canvasID] = {};
-    module['canvasDraw'+canvasID].semiOldPointY=null;
-    module['canvasDraw'+canvasID].semiOldPointX=null;
-    module['canvasDraw'+canvasID].oldPointX=null;
-    module['canvasDraw'+canvasID].oldPointY=null;
-
-
-   
+    
     //module.setEventListener(canvasID);
   };
 
@@ -420,7 +403,7 @@ $('#'+canvasID).mouseup(function(e){
           mouseUp:true
       });
     module.clearLocus(canvasID);
-    if(canvasID == myCanvasDrawID){
+    if(canvasID == myCanvasDrawID+String(pdfIndex)){
       pushing=false;
     }
     break;
@@ -488,29 +471,49 @@ $('#'+canvasID).mouseup(function(e){
   function generateCanvas(canvasID,pageNum){
     var newElement1 = document.createElement('canvas');
     var newElement2 = document.createElement('canvas');
-    var newElement3 = document.createElement('canvas');
-    
     newElement1.id = 'canvasDraw'+canvasID+String(pageNum);
     newElement2.id = 'canvasPicture'+canvasID+String(pageNum);
-    newElement3.id = 'canvasPointer'+canvasID+String(pageNum);
 
-    newElement1.zIndex = 2;
-    newElement2.zIndex = 2;
-    newElement3.zIndex = 3;
+    newElement1.style.zIndex = 2;
+    newElement2.style.zIndex = 2;
 
-    var pageWidth = document.getElementById('canvasPDF'+String(pageNum)).width;
-    var pageHeight = document.getElementById('canvasPDF'+String(pageNum)).height;
+    var pageWidth = pdfWidth;
+    var pageHeight = pdfHeight;
 
     newElement1.width= pageWidth;
     newElement1.height= pageHeight;
     newElement2.width= pageWidth;
     newElement2.height= pageHeight;
-    newElement3.width= pageWidth;
-    newElement3.height= pageHeight;
 
-    canvasContainer[pageNum].push(newElement1);
-    canvasContainer[pageNum].push(newElement2);
-    canvasContainer[pageNum].push(newElement3);
+    newElement1.style.backgroundColor='transparent';    
+    newElement2.style.backgroundColor='transparent';
+
+    newElement1.style.position = 'absolute';
+    newElement2.style.position = 'absolute';
+
+
+    var ectx1 = newElement1.getContext('2d');
+    var ectx2 = newElement2.getContext('2d');
+    
+    if(!userVideoColor[canvasID]){
+    userVideoColor[canvasID] = getUserColor();
+    }
+
+    ectx1.strokeStyle=String(userVideoColor[canvasID]);
+    ectx1.fillStyle=String(userVideoColor[canvasID]);
+    ectx2.fillStyle=String(userVideoColor[canvasID]);
+    ectx2.strokeStyle=String(userVideoColor[canvasID]);
+
+
+    canvasContainer[pageNum].draw[canvasID]=newElement1;
+    canvasContainer[pageNum].picture[canvasID]=newElement2;
+
+    drawTool['canvasDraw'+canvasID+String(pageNum)] = {};
+    drawTool['canvasDraw'+canvasID+String(pageNum)].semiOldPointX=null;
+    drawTool['canvasDraw'+canvasID+String(pageNum)].semiOldPointY=null;
+    drawTool['canvasDraw'+canvasID+String(pageNum)].oldPointX=null;
+    drawTool['canvasDraw'+canvasID+String(pageNum)].oldPointY=null;  
+
   }
 
 
@@ -519,7 +522,8 @@ $('#'+canvasID).mouseup(function(e){
   */
   function generateCanvasList(canvasID){
     var i = 1;
-    for(i=1;i<pdf.numPages+1;i++){
+    //TODO pageNumにしたい
+    for(i=1;i<19+1;i++){
       generateCanvas(canvasID,i);
       //setPdf2Canvas(i);
     }
@@ -569,7 +573,7 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
   function onLineDrawed(message){
     console.log('syncLineDrawed from '+message.target.from);
 
-      var targetID = 'canvasDraw'+message.target.from;
+      var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
       var messageValue = message.body.value;
       drawTool.drawLine(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
       drawTool.clearLocus(targetID);
@@ -577,7 +581,7 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
 
   function onFreeDrawed(message){
     console.log('syncFreeDrawed from '+message.target.from);
-      var targetID = 'canvasDraw'+message.target.from;
+      var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
       var messageValue = message.body.value;
       drawTool.resDrawCurve(targetID,messageValue.currentX,messageValue.currentY);
         
@@ -588,7 +592,7 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
 
   function onRectDrawed(message){
     console.log('syncRectDrawed from '+message.target.from);
-      var targetID = 'canvasDraw'+message.target.from;
+      var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
       var messageValue = message.body.value;
       drawTool.drawRect(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
       drawTool.clearLocus(targetID);
@@ -596,7 +600,7 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
 
   function onCircleDrawed(message){
     console.log('syncCircleDrawed from '+message.target.from);
-    var targetID = 'canvasDraw'+message.target.from;
+    var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
     var messageValue = message.body.value;
     drawTool.drawCircle(targetID,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
   }
@@ -626,7 +630,7 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
   }
 
   function onBackCanvas(message){
-      var targetID = 'canvasDraw'+message.target.from;
+      var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
       var messageValue = message.body.value;
       //drawTool.pop();
   }
@@ -657,11 +661,11 @@ canvas.height = viewport.height;
 canvas.width = viewport.width;
 pdfWidth = canvas.width;
 pdfHeight = canvas.height;
-$('#'+myCanvasDrawID).attr({
+$('#'+myCanvasDrawID+String(pdfIndex)).attr({
   width:pdfWidth,
   Height:pdfHeight,
 });
-$('#'+myCanvasPictureID).attr({
+$('#'+myCanvasPictureID+String(pdfIndex)).attr({
   width:pdfWidth,
   Height:pdfHeight,
 });
@@ -682,6 +686,28 @@ page.render(renderContext);
 
   function pdfNextPage(){
     if(pdfIndex<pdf.numPages){
+
+      //canvasContainerに保管
+      var draws = canvasContainer[pdfIndex].draw;
+      var picts = canvasContainer[pdfIndex].picture;
+      var drawBoxChildren= document.getElementById('drawBox').children;
+      var pictureBoxChildren = document.getElementById('pictureBox').children;
+
+      draws = {};
+      picts = {};
+
+
+
+      for(var i = 0;i<drawBoxChildren.length;i++){
+        draws[drawBoxChildren[i].id]=drawBoxChildren[i];
+      }
+      for(var j=0;j<pictureBoxChildren.length;j++){
+
+        picts[pictureBoxChildren[j].id]=drawBoxChildren[j];
+      }
+
+
+
       pdfIndex++;
       pdf.getPage(pdfIndex).then(function(page){
       var viewport = page.getViewport(scale);
@@ -691,11 +717,56 @@ page.render(renderContext);
       };
       page.render(renderContext);
     });
+
+
+      //canvasContainerのitemと入れ替え
+      var drawsNext = canvasContainer[pdfIndex].draw;
+      var pictsNext = canvasContainer[pdfIndex].picture;
+      var dkeys = Object.keys(drawsNext);
+      var pkeys = Object.keys(pictsNext);
+
+      $('#drawBox').empty();
+      $('#pictureBox').empty();
+
+      var drawB = document.getElementById('drawBox');
+      var pictB = document.getElementById('pictureBox');
+
+      console.log(dkeys.length);
+      console.log(pkeys.length);
+
+      dkeys.forEach(function(val,ind,arr){
+        drawB.appendChild(canvasContainer[pdfIndex].draw[val]);
+      });
+
+      pkeys.forEach(function(val,ind,arr){
+        pictB.appendChild(canvasContainer[pdfIndex].picture[val]);
+      });
+
+      drawTool.setEventListener(myCanvasDrawID+String(pdfIndex));
+
     }
   }
 
   function pdfPrevPage(){
     if(pdfIndex>1){
+      //canvasContainerに保管
+      var draws = canvasContainer[pdfIndex].draw;
+      var picts = canvasContainer[pdfIndex].picture;
+      var drawBoxChildren= document.getElementById('drawBox').children;
+      var pictureBoxChildren = document.getElementById('pictureBox').children;
+
+      draws = {};
+      picts = {};
+
+
+
+      for(var i = 0;i<drawBoxChildren.length;i++){
+        draws[drawBoxChildren[i].id]=drawBoxChildren[i];
+      }
+      for(var j=0;j<pictureBoxChildren.length;j++){
+
+        picts[pictureBoxChildren[j].id]=drawBoxChildren[j];
+      }
     pdfIndex--;
     pdf.getPage(pdfIndex).then(function(page){
       var viewport = page.getViewport(scale);
@@ -704,6 +775,31 @@ page.render(renderContext);
         viewport : viewport
       };
       page.render(renderContext);
+
+      //canvasContainerのitemと入れ替え
+      var drawsNext = canvasContainer[pdfIndex].draw;
+      var pictsNext = canvasContainer[pdfIndex].picture;
+      var dkeys = Object.keys(drawsNext);
+      var pkeys = Object.keys(pictsNext);
+
+      $('#drawBox').empty();
+      $('#pictureBox').empty();
+
+      var drawB = document.getElementById('drawBox');
+      var pictB = document.getElementById('pictureBox');
+
+      console.log(dkeys.length);
+      console.log(pkeys.length);
+
+      dkeys.forEach(function(val,ind,arr){
+        drawB.appendChild(canvasContainer[pdfIndex].draw[val]);
+      });
+
+      pkeys.forEach(function(val,ind,arr){
+        pictB.appendChild(canvasContainer[pdfIndex].picture[val]);
+      });
+
+      drawTool.setEventListener(myCanvasDrawID+String(pdfIndex));
 
     });
     }
@@ -749,7 +845,7 @@ page.render(renderContext);
   }
 
   function pdfOutputOne(canvasItem){
-    var options = {
+        var options = {
            orientation: "p",
            unit: "pt",
            format: "a4"
@@ -763,9 +859,9 @@ page.render(renderContext);
 
         var img = new Image();
         img.onload=function(){
-             doc.addImage(img,'png',canvasItem.style.left,canvasItem.style.top,canvasItem.width,canvasItem.height);
+          doc.addImage(img,'png',canvasItem.style.left,canvasItem.style.top,canvasItem.width,canvasItem.height);
         //doc.output('datauri');
-        doc.save('sample.pdf');
+          doc.save('sample.pdf');
         }
 
         img.src = imgdata;
@@ -856,7 +952,7 @@ page.render(renderContext);
             ar.push(i);
           }
 
-          async.each(ar,function(value,callback){
+          async.forEachSeries(ar,function(value,callback){
               console.log(value);
               pdfShogaDownload(value,doc,callback);
           });
@@ -874,43 +970,123 @@ page.render(renderContext);
        // doc.save('sample.pdf');
   }
 
-  function unionCanvas(){
-    var editCanvas = document.createElement('canvas');
-    editCanvas.width = pdfWidth;
-    editCanvas.height = pdfHeight;
-    var editCtx = editCanvas.getContext('2d');
-    var drawBoxChildren = document.getElementById('drawBox').children;
-    var pictureBoxChildren =document.getElementById('pictureBox').children;
-    var unionList = new Array();
-    var pdfCav = document.getElementById('pdfCanvas');
-    unionList.push(pdfCav);
-    for(var i=0;i<drawBoxChildren.length;i++){
-      unionList.push(drawBoxChildren[i]);
+  function downloadCorrectedPDF(){
+    var options = {
+       orientation: "p",
+       unit: "pt",
+       format: "a4"
+    };
+    var doc = new jsPDF(options,'','','');
+
+    var i = 1;
+    var ar = new Array();
+    for(i=1;i<=pdf.numPages;i++){
+      ar.push(i);
     }
-    for(var j=0;j<pictureBoxChildren.length;j++){
-      unionList.push(pictureBoxChildren[j]);
-    }
-    
-    var func1 = function(done){
-      async.each(unionList,function(value,callback){
+
+    async.forEachSeries(ar,function(value,callback){
         console.log(value);
-        drawImageCanvas(value,editCanvas,callback);
-      });  
-      done(null,'val');
-    }
-    async.waterfall([
-      func1
-      ],function(err,result){
+        unionCanvas(value,doc,callback);
+    });
 
-        if(err){
-          console.error(err);
-        }else{
-          pdfOutputOne(editCanvas);
+  }
+
+  function unionCanvas(pageNum,doc,callback){
+    if(1<=pageNum && pageNum <=pdf.numPages){
+    pdf.getPage(pageNum).then(function(page){
+      
+
+    var viewport = page.getViewport(scale);
+
+        var pdfCav = document.createElement('canvas');
+        var ctx = pdfCav.getContext('2d');
+        //cav.width = viewport.width;
+        //cav.height =　viewport.height;
+        pdfCav.height = pdfHeight;
+        pdfCav.width = pdfWidth;
+        var renderContext = {
+          canvasContext:ctx,
+          viewport :viewport
         }
+
+        var renderTask = page.render(renderContext);
+
+
+    renderTask.promise.then(function () {
+      console.log(pdfCav+'okok');
+        var editCanvas = document.createElement('canvas');
+    
+        editCanvas.width = pdfWidth;
+        editCanvas.height = pdfHeight;
+
+        var editCtx = editCanvas.getContext('2d');
+    
+       // var drawBoxChildren = document.getElementById('drawBox').children;
+       // var pictureBoxChildren =document.getElementById('pictureBox').children;
+        var drawBoxChildrenKey = Object.keys(canvasContainer[pageNum].draw);
+        var pictureBoxChildrenKey = Object.keys(canvasContainer[pageNum].picture);
+
+        var unionList = new Array();
+    
+        unionList.push(pdfCav);
+    
+        drawBoxChildrenKey.forEach(function(value,index,arr){
+          unionList.push(canvasContainer[pageNum].draw[value]);
+        });
+        pictureBoxChildrenKey.forEach(function(value,index,arr){
+          unionList.push(canvasContainer[pageNum].picture[value]);
+        });
+        /*
+        for(var i=0;i<drawBoxChildren.length;i++){
+          unionList.push(drawBoxChildren[i]);
+        }
+        for(var j=0;j<pictureBoxChildren.length;j++){
+          unionList.push(pictureBoxChildren[j]);
+        }
+        */
+    
+        var func1 = function(done){
+          async.each(unionList,function(value,callback){
+            console.log(value);
+            drawImageCanvas(value,editCanvas,callback);
+          });  
+          done(null,'val');
+        }
+        async.waterfall([
+        func1
+        ],function(err,result){
+
+          if(err){
+            console.error(err);
+          }else{
+            //TODO addpage
+            //pdfOutputOne(editCanvas);
+            var imgdata = editCanvas.toDataURL('image/png');
+            //doc.save('sample.pdf');
+            console.log(imgdata);
+
+            var img = new Image();
+            img.onload=function(){
+              doc.addImage(img,'png',editCanvas.style.left,editCanvas.style.top,editCanvas.width,editCanvas.height);
+               //doc.output('datauri');
+                //doc.save('sample.pdf');
+              if(pageNum== pdf.numPages){
+                doc.save('corrected.pdf');
+              }else{
+                 doc.addPage();
+              }
+              callback();
+          
+            }
+
+            img.src = imgdata;
+
+          }
+        });
       });
+    });
 
-
-
+    }
   }
 
   function drawImageCanvas(canvasItem,eCanvas,callback){
@@ -940,7 +1116,7 @@ $('#free_button').click(function(e){
   //自由線 0a
   console.log('mode change 0');
   drawTool.mode=0;
-  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasD = document.getElementById(myCanvasDrawID+String(pdfIndex));
   var myCanvasP = document.getElementById(myCanvasPointerID);
   var drawBox = document.getElementById('drawBox');
   var pointerBox = document.getElementById('pointerBox');
@@ -955,7 +1131,7 @@ $('#line_button').click(function(e){
   //固定線 1
   console.log('mode change 1');
   drawTool.mode=1;
-  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasD = document.getElementById(myCanvasDrawID+String(pdfIndex));
   var myCanvasP = document.getElementById(myCanvasPointerID);
   var drawBox = document.getElementById('drawBox');
   var pointerBox = document.getElementById('pointerBox');
@@ -969,7 +1145,7 @@ $('#rect_button').click(function(e){
   //四角線 2
   console.log('mode change 2');
   drawTool.mode=2;
-  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasD = document.getElementById(myCanvasDrawID+String(pdfIndex));
   var myCanvasP = document.getElementById(myCanvasPointerID);
   var drawBox = document.getElementById('drawBox');
   var pointerBox = document.getElementById('pointerBox');
@@ -983,7 +1159,7 @@ $('#circle_button').click(function(e){
   //円 3
   console.log('mode change 3');
   drawTool.mode=3;
-  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasD = document.getElementById(myCanvasDrawID+String(pdfIndex));
   var myCanvasP = document.getElementById(myCanvasPointerID);
   var drawBox = document.getElementById('drawBox');
   var pointerBox = document.getElementById('pointerBox');
@@ -998,7 +1174,7 @@ $('#text_button').click(function(e){
   console.log('mode change 4');
   drawTool.mode=4;
 
-  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasD = document.getElementById(myCanvasDrawID+String(pdfIndex));
   var myCanvasP = document.getElementById(myCanvasPointerID);
   var drawBox = document.getElementById('drawBox');
   var pointerBox = document.getElementById('pointerBox');
@@ -1034,7 +1210,7 @@ $('#pointer_button').click(function(e){
   console.log('pointer');
   console.log('mode change 5');
   drawTool.mode=5;
-  var myCanvasD = document.getElementById(myCanvasDrawID);
+  var myCanvasD = document.getElementById(myCanvasDrawID+String(pdfIndex));
   var myCanvasP = document.getElementById(myCanvasPointerID);
   var drawBox = document.getElementById('drawBox');
   var pointerBox = document.getElementById('pointerBox');
@@ -1045,7 +1221,8 @@ $('#pointer_button').click(function(e){
   myCanvasP.width= pdfWidth+1000;
 });
 $('#download_button').click(function(e){
-    unionCanvas();
+    //unionCanvas(1);
+    downloadCorrectedPDF()
   console.log('donwload');
 });
 $('#shoga_download_button').click(function(e){
@@ -1056,13 +1233,55 @@ $('#shoga_download_button').click(function(e){
 
 //初期リスナーセット
 //全般的に初期化
-drawTool.setEventListener(myCanvasDrawID);
+
+var setArr = new Array();
+for(var i = 1;i<=20;i++){
+
+    var newElement1 = document.createElement('canvas');
+    var newElement2 = document.createElement('canvas');
+    newElement1.id=myCanvasDrawID+String(i);
+    newElement2.id=myCanvasPictureID+String(i);
+
+    newElement1.width = pdfWidth;
+    newElement2.width = pdfWidth;
+
+    newElement1.height = pdfHeight;
+    newElement2.height = pdfHeight;
+
+    newElement1.style.zIndex=4;
+    newElement2.style.zIndex=2;
+
+    newElement1.style.position='absolute';
+    newElement2.style.position='absolute';
+
+    newElement1.style.backgroundColor='transparent';
+    newElement2.style.backgroundColor='transparent';
+    canvasContainer[i]={
+      draw:{},
+      picture:{}
+    }
+    canvasContainer[i].draw[myCanvasDrawID]=newElement1;
+    canvasContainer[i].picture[myCanvasPictureID]=newElement2;
+    //module.setEventListener(canvasID)
+
+    //TODO イベントリスナーセット
+    setArr.push(i);
+
+}
+
+setArr.forEach(function(value,index,arr){
+  console.log('event set');
+  drawTool.setEventListener(myCanvasDrawID+String(value));
+  drawTool[myCanvasDrawID+String(value)] = {};
+  drawTool[myCanvasDrawID+String(value)].semiOldPointX=null;
+  drawTool[myCanvasDrawID+String(value)].semiOldPointY=null;
+  drawTool[myCanvasDrawID+String(value)].oldPointX=null;
+  drawTool[myCanvasDrawID+String(value)].oldPointY=null;  
+});
+
+
+
 drawTool.setEventListener(myCanvasPointerID);
-drawTool[myCanvasDrawID] = {};
-drawTool[myCanvasDrawID].semiOldPointX=null;
-drawTool[myCanvasDrawID].semiOldPointY=null;
-drawTool[myCanvasDrawID].oldPointX=null;
-drawTool[myCanvasDrawID].oldPointY=null;
 drawTool[myCanvasPointerID] = {};
 drawTool[myCanvasPointerID].semiOldPointX=null;
 drawTool[myCanvasPointerID].semiOldPointY=null;
