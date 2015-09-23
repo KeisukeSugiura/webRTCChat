@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>video capture</title>
+	<script src="jquery-1.11.3.min.js"></script>
+  	<script src="jquery-ui-1.11.4/jquery-ui.min.js"></script>
+
+  <script type="text/javascript" src="./pdfjs-1.1.215-dist/build/pdf.js"></script>
+  <script src="./jspdf/jspdf.min.js"></script>
+  <script src="./async/async.min.js"></script>
+</head>
+<body>
+	 <div id="item_area" style="width:1000px;height:842px;border:1px solid black;">
+
+   <video id="local-video" autoplay width="240" height="180" style=" border: 1px solid black;margin:0px 0px 0px 0px;z-index: 5;-webkit-transform: scaleX(-1);visibility: hidden;"></video>
+
+  <!--
+   <video id="local-video" autoplay style="width: 360px; height: 240px; border: 1px solid black;position:absolute;margin:0px 0px 0px 0px;z-index: 0;-webkit-transform: scaleX(-1);"></video>
+   -->
+   <img id="local-img">
+  </div>
+
+   <canvas id="local-canvas"></canvas>
+</body>
+<script>
+
+ var localVideo = document.getElementById('local-video');
+ var hideVideo = document.createElement('video');
+ var hideStream = null;
+  var localStream = null;
+
+  var mediaConstraints = {'mandatory': {'OfferToReceiveAudio':true, 'OfferToReceiveVideo':true }};
+
+  var iceSeparator = '------ ICE Candidate -------';
+  var CR = String.fromCharCode(13);
+  
+  
+  // ---------------------- video handling -----------------------
+  // start local video
+  function startVideo() {
+	navigator.webkitGetUserMedia({video: true, audio: false},
+    function (stream) { // success
+      localStream = stream;
+   
+      localVideo.src = window.webkitURL.createObjectURL(stream);
+      localVideo.play();
+
+	  localVideo.volume = 0;
+
+    },
+    function (error) { // error
+      console.error('An error occurred: [CODE ' + error.code + ']');
+      return;
+    }
+	);
+  }
+  startVideo();
+
+
+
+function captureControl(){
+	console.log('captureControl')
+	var cav = document.getElementById('local-canvas');
+	var ctx = cav.getContext('2d');
+	cav.width = 800;
+	cav.height = 600;
+	ctx.drawImage(localVideo,0,0,800,600);
+	setTimeout(captureControl,1000);
+}
+captureControl();
+
+
+
+
+</script>
+</html>

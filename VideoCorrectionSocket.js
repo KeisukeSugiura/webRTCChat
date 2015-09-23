@@ -64,7 +64,11 @@ $(function(){
 /**
  *
  *
- *editPDF.js
+ *editPD
+
+
+
+ F.js
  *
  *
  * 
@@ -247,7 +251,7 @@ var drawTool = (function(){
     var newElement1 = document.createElement('canvas');
     var newElement2 = document.createElement('canvas');
     var newElement3 = document.createElement('canvas');
-    //TODO canvas要素のプロパティ設定
+
     newElement1.id='canvasDraw'+canvasID;
     newElement2.id='canvasPicture'+canvasID;
     newElement3.id='canvasPointer'+canvasID;
@@ -281,6 +285,23 @@ var drawTool = (function(){
         zIndex:3,
         position:'absolute'
     });
+
+    
+    var ectx1 = newElement1.getContext('2d');
+    var ectx2 = newElement2.getContext('2d');
+    var ectx3 = newElement3.getContext('2d');
+    
+    if(!userVideoColor[canvasID]){
+    userVideoColor[canvasID] = getUserColor();
+    }
+    console.log(typeof userVideoColor[canvasID]);
+
+    ectx1.strokeStyle=String(userVideoColor[canvasID]);
+    ectx1.fillStyle=String(userVideoColor[canvasID]);
+    ectx3.fillStyle=String(userVideoColor[canvasID]);
+    ectx3.strokeStyle=String(userVideoColor[canvasID]);
+
+
 
 
     module['canvasDraw'+canvasID] = {};
@@ -774,9 +795,17 @@ page.render(renderContext);
         renderTask.promise.then(function () {
           console.log('ok');
         ctx.fillStyle='red';
-        ctx.fillRect(0,0,50,50);
-        ctx.fillRect(cav.width-50,0,50,50);
-        ctx.fillRect(0,cav.height-50,50,50);
+        ctx.fillRect(0,0,35,35);
+        ctx.fillRect(cav.width-35,0,35,35);
+        ctx.fillRect(0,cav.height-35,35,35);
+        ctx.fillStyle="white";
+        ctx.fillRect(5,5,25,25);
+        ctx.fillRect(cav.width-30,5,25,25);
+        ctx.fillRect(5,cav.height-30,25,25);
+        ctx.fillStyle='red';
+        ctx.fillRect(10,10,15,15);
+        ctx.fillRect(cav.width-25,10,15,15);
+        ctx.fillRect(10,cav.height-25,15,15);
         /*
         var options = {
            orientation: "p",
@@ -1135,7 +1164,9 @@ drawTool[myCanvasPointerID].oldPointY=null;
   }
 
   function generateItemWithId(id){
+    if(!userVideoColor[id]){
     userVideoColor[id] = getUserColor();
+    }
     var itemHtml = 
     '<video id="'+id+'"'+
     'autoplay style="width:240px;height:180px;position:absolute;-webkit-transform: scaleX(-1);margin:0px 0px 0px 0px;zIndex:1;">';
@@ -1391,6 +1422,8 @@ drawTool[myCanvasPointerID].oldPointY=null;
       sendVideoPositionChanged();
   }
 
+
+
   function getRoomName() { // たとえば、 URLに  ?roomname  とする
     var url = document.location.href;
     var args = url.split('?');
@@ -1524,7 +1557,7 @@ drawTool[myCanvasPointerID].oldPointY=null;
 
   function setVideoVolume(id){
     var targetVideo = document.getElementById(id);
-    console.log(targetVideo);
+    //console.log(targetVideo);
     var dist = euclidDist(id);
     if(dist<120){
       targetVideo.volume=1.0;
@@ -1539,7 +1572,7 @@ drawTool[myCanvasPointerID].oldPointY=null;
     var keys =Object.keys(videoElementsInUse);
     //console.log(keys);
     keys.forEach(function(value,index,arr){
-        console.log('change volume in '+ value);
+       // console.log('change volume in '+ value);
         setVideoVolume(value);
     });
   }
