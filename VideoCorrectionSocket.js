@@ -1,8 +1,8 @@
 $(function(){
   var socketReady = false;
   var port = 9001;
-  //var socket = io.connect('http://133.68.112.180:' +  port + '/');
-  var socket = io.connect('http://127.0.0.1:' + port + '/');
+  var socket = io.connect('http://133.68.112.180:' +  port + '/');
+  //var socket = io.connect('http://127.0.0.1:' + port + '/');
   //
   //
 
@@ -1226,7 +1226,24 @@ $('#download_button').click(function(e){
   console.log('donwload');
 });
 $('#shoga_download_button').click(function(e){
-    pdfShogaDownloadMulti();
+    //pdfShogaDownloadMulti();
+    
+    var nr = document.createElement('canvas');
+    var ia = document.getElementById('item_area');
+    nr.width = localVideo.height/Math.sqrt(2);
+    nr.height = localVideo.height;
+    nr.style.position = 'absolute';
+    nr.style.zIndex = 6;
+    nr.style.border = 'solid 1px red';
+    nr.style.top = localVideo.style.top;
+    nr.style.left = String(parseFloat(localVideo.style.left)+parseFloat(localVideo.style.width)-(180/Math.sqrt(2)))+'px';
+    ia.appendChild(nr);
+    setTimeout(shogo,3000);
+    function shogo(){
+      shogaDraw(document.getElementById(myCanvasPictureID+String(pdfIndex)));
+      ia.removeChild(nr);
+    }
+
   console.log('shoga download');
 });
 
@@ -1969,6 +1986,149 @@ drawTool[myCanvasPointerID].oldPointY=null;
   --*/
 
 
+/**
+ *
+ *
+ *
+ * 
+ * 	書画カメラ
+ *
+ *
+ * 
+ */
+
+
+var shogaDraw = function (canvas) {
+		var context = canvas.getContext('2d');
+		console.log(localVideo.width);
+		console.log(localVideo.height);
+		console.log(localVideo.style.width);
+		console.log(localVideo.style.height);
+		console.log(canvas.height);
+		console.log(canvas.width);
+        context.drawImage(localVideo,0,10,400/Math.sqrt(2)+58,463,0, 0,canvas.width,canvas.height);
+        // ここでクロマキー処理をする
+
+        chromaKey(canvas);
+        
+    };
+
+    // 消す色と閾値
+    var chromaKeyColor = {r: 0, g: 255, b: 255},
+        colorDistance = 200;
+
+    // クロマキー処理
+    var chromaKey = function (canvas) {
+    	var context = canvas.getContext('2d');
+        var imageData = context.getImageData(0, 0, canvas.width, canvas.height),
+            data = imageData.data;
+
+        // dataはUint8ClampedArray
+        // 長さはcanvasの width * height * 4(r,g,b,a)
+        // 先頭から、一番左上のピクセルのr,g,b,aの値が順に入っており、
+        // 右隣のピクセルのr,g,b,aの値が続く
+        // n から n+4 までが1つのピクセルの情報となる
+        console.log(data.length/4);
+
+        for (var i = 0, l = data.length; i < l; i += 4) {
+            var target = {
+                    r: data[i],
+                    g: data[i + 1],
+                    b: data[i + 2]
+                };
+
+          
+            // chromaKeyColorと現在のピクセルの三次元空間上の距離を閾値と比較する
+            // 閾値より小さい（色が近い）場合、そのピクセルを消す
+            if (getColorDistance(chromaKeyColor, target) < colorDistance) {
+                // alpha値を0にすることで見えなくする
+                data[i + 3] = 0;
+            }
+
+            if(target.r >= (target.g+target.b)){
+              data[i+3]=0;
+            }
+            
+			
+		
+			       var hsv = rgb_to_hsv([target.r,target.g,target.b]);
+			       if(!isHSVonRED(hsv)){
+				      data[i+3]=0;
+			       }
+
+
+        }
+
+        // 書き換えたdataをimageDataにもどし、描画する
+        imageData.data = data;
+        context.putImageData(imageData, 0, 0);
+    };
+
+    // r,g,bというkeyを持ったobjectが第一引数と第二引数に渡される想定
+   var getColorDistance = function (rgb1, rgb2) {
+        // 三次元空間の距離が返る
+        return Math.sqrt(
+            Math.pow((rgb1.r - rgb2.r), 2) +
+            Math.pow((rgb1.g - rgb2.g), 2) +
+            Math.pow((rgb1.b - rgb2.b), 2)
+        );
+    };
+
+
+
+    function isHSVonRED(hsv){
+  var h = hsv[0];
+  var s = hsv[1];
+  var v = hsv[2];
+  var flagH=false;
+  var flagS=false;
+  var flagV=false;
+  //閾値は独自設定
+  if((0<=h && h<=20) || (340<=h && h<=360)){
+    flagH=true;
+  }
+  if(40 <= s){
+    flagS = true;
+  }
+  if(40 <= v){
+    flagV = true;
+  }
+  
+
+  return (flagH && flagS && flagH);
+
+}
+function rgb_to_hsv(rgb){
+    var r = rgb[0];
+    var g = rgb[1];
+    var b = rgb[2];
+    var h;
+    var s;
+    var v;
+    var max = Math.max(r,Math.max(g,b));
+    var min = Math.min(r,Math.min(g,b));
+    //h
+    if(max == min){
+      h=0;
+    }else if(max == r){
+      h=(60*(g-b)/(max-min)+360)%360;
+    }else if(max == g){
+      h=(60*(b-r)/(max-min))+120;
+    }else if(max == b){
+      h=(60*(r-g)/(max-min))+240;
+    }
+    //s
+    if(max == 0){
+      s =0;
+    }else{
+      s = (255*((max-min)/max));
+    }
+    //v
+    v = max;
+
+    return [h,s,v];
+
+}
 
 
 

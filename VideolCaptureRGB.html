@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Language" content="ja">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=0,minimal-ui">
+<title>Chroma key</title>
+</head>
+<body>
+
+    <div>
+        <input id="color" type="color" value="#00ff00" />
+        <input id="distance" type="number" value="30" />
+    </div>
+
+    <div id="bg">
+        <video id="video" autoplay></video>
+        <canvas id="canvas" width="480" height="360"></canvas>
+    </div>
+
+ 
+<script>
+ var video = document.getElementById('video');
+    // videoは非表示にしておく
+    video.style.display = 'none';
+
+    var canvas = document.getElementById('canvas');
+    // そのまま表示すると鏡像にならないので反転させておく
+    canvas.style.transform = 'rotateY(180deg)';
+
+    var context = canvas.getContext('2d');
+
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+    navigator.getUserMedia({video: true, audio: false}, function (stream) {
+        video.src = URL.createObjectURL(stream);
+        draw();
+    }, function () {});
+
+    // videoの映像をcanvasに描画する
+    var draw = function () {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // ここでクロマキー処理をする
+        chromaKey();
+        requestAnimationFrame(draw);
+    };
+
+    // 消す色と閾値
+    var chromaKeyColor = {r: 0, g: 255, b: 0},
+        colorDistance = 30;
+
+    // クロマキー処理
+    var chromaKey = function () {
+        var imageData = context.getImageData(0, 0, canvas.width, canvas.height),
+            data = imageData.data;
+
+        // dataはUint8ClampedArray
+        // 長さはcanvasの width * height * 4(r,g,b,a)
+        // 先頭から、一番左上のピクセルのr,g,b,aの値が順に入っており、
+        // 右隣のピクセルのr,g,b,aの値が続く
+        // n から n+4 までが1つのピクセルの情報となる
+
+        for (var i = 0, l = data.length; i < l; i += 4) {
+            var target = {
+                    r: data[i],
+                    g: data[i + 1],
+                    b: data[i + 2]
+                };
+
+            
+            // chromaKeyColorと現在のピクセルの三次元空間上の距離を閾値と比較する
+            // 閾値より小さい（色が近い）場合、そのピクセルを消す
+            if (getColorDistance(chromaKeyColor, target) < colorDistance) {
+                // alpha値を0にすることで見えなくする
+                data[i + 3] = 0;
+            }
+            
+			
+			
+            /*
+			var hsv = rgb_to_hsv([target.r,target.g,target.b]);
+			if(isHSVonRED(hsv)){
+				data[i+3]=0;
+			}
+			*/
+
+
+        }
+
+        // 書き換えたdataをimageDataにもどし、描画する
+        imageData.data = data;
+        context.putImageData(imageData, 0, 0);
+    };
+
+    // r,g,bというkeyを持ったobjectが第一引数と第二引数に渡される想定
+   var getColorDistance = function (rgb1, rgb2) {
+        // 三次元空間の距離が返る
+        return Math.sqrt(
+            Math.pow((rgb1.r - rgb2.r), 2) +
+            Math.pow((rgb1.g - rgb2.g), 2) +
+            Math.pow((rgb1.b - rgb2.b), 2)
+        );
+    };
+
+
+    var color = document.getElementById('color');
+    color.addEventListener('change', function () {
+        // フォームの値は16進カラーコードなのでrgb値に変換する
+        chromaKeyColor = color2rgb(this.value);
+    });
+
+    var color2rgb = function (color) {
+        color = color.replace(/^#/, '');
+        return {
+            r: parseInt(color.substr(0, 2), 16),
+            g: parseInt(color.substr(2, 2), 16),
+            b: parseInt(color.substr(4, 2), 16)
+        };
+    };
+
+    var distance = document.getElementById('distance');
+    distance.style.textAlign = 'right';
+    distance.addEventListener('change', function () {
+        colorDistance = this.value;
+    });
+
+    var bg = document.getElementById('bg');
+    bg.style.width = canvas.width + 'px';
+    bg.style.height = canvas.height + 'px';
+    bg.style.background = 'url(./bg.jpg) 50% 50% no-repeat';
+    bg.style.backgroundSize = 'cover';
+
+
+    function isHSVonRED(hsv){
+  var h = hsv[0];
+  var s = hsv[1];
+  var v = hsv[2];
+  var flagH=false;
+  var flagS=false;
+  var flagV=false;
+  //閾値は独自設定
+  if((0<=h && h<=30) || (330<=h && h<=360)){
+    flagH=true;
+  }
+  if(40 <= s){
+    flagS = true;
+  }
+  if(40 <= v){
+    flagV = true;
+  }
+
+
+  return (flagH && flagS && flagH);
+
+}
+function rgb_to_hsv(rgb){
+    var r = rgb[0];
+    var g = rgb[1];
+    var b = rgb[2];
+    var h;
+    var s;
+    var v;
+    var max = Math.max(r,Math.max(g,b));
+    var min = Math.min(r,Math.min(g,b));
+    //h
+    if(max == min){
+      h=0;
+    }else if(max == r){
+      h=(60*(g-b)/(max-min)+360)%360;
+    }else if(max == g){
+      h=(60*(b-r)/(max-min))+120;
+    }else if(max == b){
+      h=(60*(r-g)/(max-min))+240;
+    }
+    //s
+    if(max == 0){
+      s =0;
+    }else{
+      s = (255*((max-min)/max));
+    }
+    //v
+    v = max;
+
+    return [h,s,v];
+
+}
+
+
+</script>
+</body>
+</html>
