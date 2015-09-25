@@ -243,7 +243,7 @@ var drawTool = (function(){
       var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
     var poped=canvasStatus.pop();
     if(poped){
-     myContext.putImageData(poped,$('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID).offset().top);
+     myContext.putImageData(poped,$('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID+String(pdfIndex)).offset().top);
     }
   };
 
@@ -646,7 +646,7 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
 /*
 pdf初期呼び出し
 */
-  PDFJS.getDocument('1DEX-6.pdf').then(function(pdf1) {
+  PDFJS.getDocument('kyoshida.pdf').then(function(pdf1) {
   // you can now use *pdf* here
   pdf = pdf1;
   pdfSize = pdf.numPages;

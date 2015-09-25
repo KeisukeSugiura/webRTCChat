@@ -1622,6 +1622,8 @@ PDFJS.maxImageSize = (PDFJS.maxImageSize === undefined ?
  * @var {string}
  */
 PDFJS.cMapUrl = (PDFJS.cMapUrl === undefined ? null : PDFJS.cMapUrl);
+PDFJS.cMapUrl = "../bcmaps/"; // /をつける
+PDFJS.cMapPacked = true; // 拡張子にbcmapを付ける
 
 /**
  * Specifies if CMaps are binary packed.
