@@ -35,28 +35,28 @@ $(function(){
   // socket: channel connected
   
   socket.on('connect', onOpened)
-        .on('syncLine',onLineDrawed)
-        .on('syncFree',onFreeDrawed)
-        .on('syncRect',onRectDrawed)
-        .on('syncCircle',onCircleDrawed)
-        .on('syncPointer',onPointerDrawed)
-        .on('addCanvas',onAddCanvas)
-        .on('clearPointerCanvas',onClearPointerCanvas)
-        .on('syncBackCanvas',onBackCanvas)
-        .on('pageNext',onPageNext)
-        .on('pagePrev',onPagePrev)
-        .on('signaling', onMessage)
-        .on('changeVideoPosition',onPositionChanged)
-        .on('initializeVideoPosition',onPositionInitialize);
+  .on('syncLine',onLineDrawed)
+  .on('syncFree',onFreeDrawed)
+  .on('syncRect',onRectDrawed)
+  .on('syncCircle',onCircleDrawed)
+  .on('syncPointer',onPointerDrawed)
+  .on('addCanvas',onAddCanvas)
+  .on('clearPointerCanvas',onClearPointerCanvas)
+  .on('syncBackCanvas',onBackCanvas)
+  .on('pageNext',onPageNext)
+  .on('pagePrev',onPagePrev)
+  .on('signaling', onMessage)
+  .on('changeVideoPosition',onPositionChanged)
+  .on('initializeVideoPosition',onPositionInitialize);
   
   function onOpened(evt) {
     console.log('socket opened.');
     socketReady = true;
-  
+
     roomName = getRoomName(); // 会議室名を取得する
-   socket.emit('enter', roomName);
-   socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null});
-  console.log('enter to ' + roomName);
+    socket.emit('enter', roomName);
+    socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null});
+    console.log('enter to ' + roomName);
   }
 
 
@@ -97,16 +97,16 @@ var drawTool = (function(){
 
   module.drawCurve = function(canvasID,cx,cy){
    // module.drawPoint(ctx,cx,cy);
-    if(module[canvasID].oldPointX && module[canvasID].semiOldPointX){
-      var cav = document.getElementById(canvasID);
-      ctx = cav.getContext('2d');
-      ctx.beginPath();
-      ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
-      ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
+   if(module[canvasID].oldPointX && module[canvasID].semiOldPointX){
+    var cav = document.getElementById(canvasID);
+    ctx = cav.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
+    ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
       //ctx.closePath();
       ctx.stroke();
-    
-     
+
+
       module.updateLocus(canvasID,cx,cy);
     }else{
 
@@ -117,29 +117,29 @@ var drawTool = (function(){
   module.resDrawCurve = function(canvasID,cx,cy){
    // module.drawPoint(ctx,cx,cy);
 
-    if(module[canvasID].oldPointX && module[canvasID].semiOldPointX){
-      var cav = document.getElementById(canvasID);
-     
-      ctx = cav.getContext('2d');
-      ctx.beginPath();
-      ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
-      ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
+   if(module[canvasID].oldPointX && module[canvasID].semiOldPointX){
+    var cav = document.getElementById(canvasID);
+
+    ctx = cav.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
+    ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
       //ctx.closePath();
       ctx.stroke();
-    
+
       module.updateLocus(canvasID,cx,cy);
     }else{
      // console.log('old X : '+module[canvasID].oldPointX);
      // console.log('semi X : '+module[canvasID].semiOldPointX);
-      module.updateLocus(canvasID,cx,cy);
-    }
-  };
+     module.updateLocus(canvasID,cx,cy);
+   }
+ };
 
-  module.drawPoint = function(canvasID,cx,cy){
-    var cav = document.getElementById(canvasID);
-    var ctx = cav.getContext('2d');
-    ctx.beginPath();
-    ctx.arc(cx,cy,5,0,Math.PI*2);
+ module.drawPoint = function(canvasID,cx,cy){
+  var cav = document.getElementById(canvasID);
+  var ctx = cav.getContext('2d');
+  ctx.beginPath();
+  ctx.arc(cx,cy,5,0,Math.PI*2);
     //ctx.closePath();
     ctx.fill();
   };
@@ -181,7 +181,7 @@ var drawTool = (function(){
     var cav = document.getElementById(canvasID);
     var ctx = cav.getContext('2d');
     console.log(cav);
-   
+
     //ctx.strokeRect(ux-5,uy-95,250,190);
     ctx.beginPath();
     ctx.moveTo(ux-5,uy);
@@ -224,46 +224,46 @@ var drawTool = (function(){
   //kokusei:matsuko$4649
   /**
     状態を保存する
-  */
-  module.pushStatus = function(canvasID){
+    */
+    module.pushStatus = function(canvasID){
     //TODO 自分の分と相手の分，どのように管理するのか
     //ans TODO 各ユーザごとにcanvasを追加する
     //
-      var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
-      canvasStatus.push(myContext.getImageData($('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID+String(pdfIndex)).offset().top,$('#'+myCanvasDrawID+String(pdfIndex)).width(),$('#'+myCanvasDrawID+String(pdfIndex)).height()));
+    var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
+    canvasStatus.push(myContext.getImageData($('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID+String(pdfIndex)).offset().top,$('#'+myCanvasDrawID+String(pdfIndex)).width(),$('#'+myCanvasDrawID+String(pdfIndex)).height()));
   };
 
 
   /**
     元の状態に戻す
-  */
-  module.popStatus = function(){
+    */
+    module.popStatus = function(){
     //TODO 各ユーザごとにcanvasを持たせておき,対応するcanvasStatusをpopする
     //
-      var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
+    var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
     var poped=canvasStatus.pop();
     if(poped){
      myContext.putImageData(poped,$('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID+String(pdfIndex)).offset().top);
-    }
-  };
+   }
+ };
 
 
-  module.addCanvas= function(canvasID){
-    var newElement3 = document.createElement('canvas');
+ module.addCanvas= function(canvasID){
+  var newElement3 = document.createElement('canvas');
 
-    newElement3.id='canvasPointer'+canvasID;
+  newElement3.id='canvasPointer'+canvasID;
 
-    newElement3.width = pdfWidth+1000;
+  newElement3.width = pdfWidth+1000;
 
-    newElement3.height = pdfHeight;
+  newElement3.height = pdfHeight;
 
-    newElement3.style.zIndex=3;
+  newElement3.style.zIndex=3;
 
-    newElement3.style.position='absolute';
+  newElement3.style.position='absolute';
 
-    var pictureBox = document.getElementById('pictureBox');
-    var pointerBox = document.getElementById('pointerBox');
-    var drawBox = document.getElementById('drawBox');
+  var pictureBox = document.getElementById('pictureBox');
+  var pointerBox = document.getElementById('pointerBox');
+  var drawBox = document.getElementById('drawBox');
     //drawBox.appendChild(newElement1);
     //pictureBox.appendChild(newElement2);
     //pointerBox.appendChild(newElement3);
@@ -271,7 +271,7 @@ var drawTool = (function(){
     var ectx3 = newElement3.getContext('2d');
     
     if(!userVideoColor[canvasID]){
-    userVideoColor[canvasID] = getUserColor();
+      userVideoColor[canvasID] = getUserColor();
     }
     ectx3.fillStyle=String(userVideoColor[canvasID]);
     ectx3.strokeStyle=String(userVideoColor[canvasID]);
@@ -313,12 +313,12 @@ $('#'+canvasID).mousedown(function(e){
     //var canvas = document.getElementById('the-canvas');
     //var ctx = canvas.getContext('2d');
     module.drawCurve(canvasID,e.pageX-5,e.pageY-30);
-     socket.json.emit('noticeFreeDrawed',{
-          roomName:roomName,
-          currentX:e.pageX-5,
-          currentY:e.pageY-30,
-          mouseUp:false
-      });
+    socket.json.emit('noticeFreeDrawed',{
+      roomName:roomName,
+      currentX:e.pageX-5,
+      currentY:e.pageY-30,
+      mouseUp:false
+    });
     break;
     case 1:
     //線
@@ -356,12 +356,12 @@ $('#'+canvasID).mousemove(function(e){
     case 0:
     //自由
     module.drawCurve(canvasID,e.pageX-5,e.pageY-30);
-     socket.json.emit('noticeFreeDrawed',{
-          roomName:roomName,
-          currentX:e.pageX-5,
-          currentY:e.pageY-30,
-          mouseUp:false
-      });
+    socket.json.emit('noticeFreeDrawed',{
+      roomName:roomName,
+      currentX:e.pageX-5,
+      currentY:e.pageY-30,
+      mouseUp:false
+    });
     break;
     case 1:
     //線
@@ -377,7 +377,7 @@ $('#'+canvasID).mousemove(function(e){
     break;
     case 5:
     //ポインタ
-   module.clearCanvas(canvasID);
+    module.clearCanvas(canvasID);
     module.drawPointer(canvasID,e.pageX-5,e.pageY-30,$('#local-video').offset().left-10,$('#local-video').offset().top+90-40);
     socket.json.emit('noticePointerDrawed',{
       roomName:roomName,
@@ -388,20 +388,20 @@ $('#'+canvasID).mousemove(function(e){
     });
     break;
   }
-  }
+}
 });
 $('#'+canvasID).mouseup(function(e){
-    console.log('mouseUp');
-   switch(module.mode){
+  console.log('mouseUp');
+  switch(module.mode){
     case 0:
     //自由
     module.drawCurve(canvasID,e.pageX-5,e.pageY-30);
-     socket.json.emit('noticeFreeDrawed',{
-          roomName:roomName,
-          currentX:e.pageX-5,
-          currentY:e.pageY-30,
-          mouseUp:true
-      });
+    socket.json.emit('noticeFreeDrawed',{
+      roomName:roomName,
+      currentX:e.pageX-5,
+      currentY:e.pageY-30,
+      mouseUp:true
+    });
     module.clearLocus(canvasID);
     if(canvasID == myCanvasDrawID+String(pdfIndex)){
       pushing=false;
@@ -411,11 +411,11 @@ $('#'+canvasID).mouseup(function(e){
     //線
     module.drawLine(canvasID,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX-5,e.pageY-30);
     socket.json.emit('noticeLineDrawed',{
-        roomName:roomName,
-        startX:module[canvasID].semiOldPointX,
-        startY:module[canvasID].semiOldPointY,
-        endX:e.pageX-5,
-        endY:e.pageY-30
+      roomName:roomName,
+      startX:module[canvasID].semiOldPointX,
+      startY:module[canvasID].semiOldPointY,
+      endX:e.pageX-5,
+      endY:e.pageY-30
     });
     module.clearLocus(canvasID);
     break;
@@ -423,11 +423,11 @@ $('#'+canvasID).mouseup(function(e){
     //四角
     module.drawRect(canvasID,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX-5,e.pageY-30);
     socket.json.emit('noticeRectDrawed',{
-        roomName:roomName,
-        startX:module[canvasID].semiOldPointX,
-        startY:module[canvasID].semiOldPointY,
-        endX:e.pageX-5,
-        endY:e.pageY-30
+      roomName:roomName,
+      startX:module[canvasID].semiOldPointX,
+      startY:module[canvasID].semiOldPointY,
+      endX:e.pageX-5,
+      endY:e.pageY-30
     });
     module.clearLocus(canvasID);
     break;
@@ -463,58 +463,58 @@ $('#'+canvasID).mouseup(function(e){
   }
 });
 
-  };
+};
 
-  return module;  
+return module;  
 })();
 
-  function generateCanvas(canvasID,pageNum){
-    var newElement1 = document.createElement('canvas');
-    var newElement2 = document.createElement('canvas');
-    newElement1.id = 'canvasDraw'+canvasID+String(pageNum);
-    newElement2.id = 'canvasPicture'+canvasID+String(pageNum);
+function generateCanvas(canvasID,pageNum){
+  var newElement1 = document.createElement('canvas');
+  var newElement2 = document.createElement('canvas');
+  newElement1.id = 'canvasDraw'+canvasID+String(pageNum);
+  newElement2.id = 'canvasPicture'+canvasID+String(pageNum);
 
-    newElement1.style.zIndex = 2;
-    newElement2.style.zIndex = 2;
+  newElement1.style.zIndex = 2;
+  newElement2.style.zIndex = 2;
 
-    var pageWidth = pdfWidth;
-    var pageHeight = pdfHeight;
+  var pageWidth = pdfWidth;
+  var pageHeight = pdfHeight;
 
-    newElement1.width= pageWidth;
-    newElement1.height= pageHeight;
-    newElement2.width= pageWidth;
-    newElement2.height= pageHeight;
+  newElement1.width= pageWidth;
+  newElement1.height= pageHeight;
+  newElement2.width= pageWidth;
+  newElement2.height= pageHeight;
 
-    newElement1.style.backgroundColor='transparent';    
-    newElement2.style.backgroundColor='transparent';
+  newElement1.style.backgroundColor='transparent';    
+  newElement2.style.backgroundColor='transparent';
 
-    newElement1.style.position = 'absolute';
-    newElement2.style.position = 'absolute';
+  newElement1.style.position = 'absolute';
+  newElement2.style.position = 'absolute';
 
 
-    var ectx1 = newElement1.getContext('2d');
-    var ectx2 = newElement2.getContext('2d');
-    
-    if(!userVideoColor[canvasID]){
+  var ectx1 = newElement1.getContext('2d');
+  var ectx2 = newElement2.getContext('2d');
+
+  if(!userVideoColor[canvasID]){
     userVideoColor[canvasID] = getUserColor();
-    }
-
-    ectx1.strokeStyle=String(userVideoColor[canvasID]);
-    ectx1.fillStyle=String(userVideoColor[canvasID]);
-    ectx2.fillStyle=String(userVideoColor[canvasID]);
-    ectx2.strokeStyle=String(userVideoColor[canvasID]);
-
-
-    canvasContainer[pageNum].draw[canvasID]=newElement1;
-    canvasContainer[pageNum].picture[canvasID]=newElement2;
-
-    drawTool['canvasDraw'+canvasID+String(pageNum)] = {};
-    drawTool['canvasDraw'+canvasID+String(pageNum)].semiOldPointX=null;
-    drawTool['canvasDraw'+canvasID+String(pageNum)].semiOldPointY=null;
-    drawTool['canvasDraw'+canvasID+String(pageNum)].oldPointX=null;
-    drawTool['canvasDraw'+canvasID+String(pageNum)].oldPointY=null;  
-
   }
+
+  ectx1.strokeStyle=String(userVideoColor[canvasID]);
+  ectx1.fillStyle=String(userVideoColor[canvasID]);
+  ectx2.fillStyle=String(userVideoColor[canvasID]);
+  ectx2.strokeStyle=String(userVideoColor[canvasID]);
+
+
+  canvasContainer[pageNum].draw[canvasID]=newElement1;
+  canvasContainer[pageNum].picture[canvasID]=newElement2;
+
+  drawTool['canvasDraw'+canvasID+String(pageNum)] = {};
+  drawTool['canvasDraw'+canvasID+String(pageNum)].semiOldPointX=null;
+  drawTool['canvasDraw'+canvasID+String(pageNum)].semiOldPointY=null;
+  drawTool['canvasDraw'+canvasID+String(pageNum)].oldPointX=null;
+  drawTool['canvasDraw'+canvasID+String(pageNum)].oldPointY=null;  
+
+}
 
 
   /**
@@ -532,8 +532,8 @@ $('#'+canvasID).mouseup(function(e){
 
   /**
     PDFの読み込み時に呼ばれる
-  */
-  function setPDF2Canvas(pageNum){
+    */
+    function setPDF2Canvas(pageNum){
     //最奥CanvasであるPDFの描画
     pdf.getPage(pageNum).then(function(page){
       var viewport = page.getViewport(scale);
@@ -546,146 +546,146 @@ $('#'+canvasID).mouseup(function(e){
       var renderContext = {
        canvasContext: newContext,
        viewport: viewport
-      };
-      page.render(renderContext);
-       return newCanvas;
+     };
+     page.render(renderContext);
+     return newCanvas;
 
-       });
+   });
   }
- 
+
 
 function getRoomName() { // たとえば、 URLに  ?roomname  とする
-    var url = document.location.href;
-    var args = url.split('?');
-    if (args.length > 1) {
-      var room = args[1];
-      if (room != "") {
-        return room;
-      }
+  var url = document.location.href;
+  var args = url.split('?');
+  if (args.length > 1) {
+    var room = args[1];
+    if (room != "") {
+      return room;
     }
-    return "_defaultroom";
   }
+  return "_defaultroom";
+}
 
-  function onNewCanvas(message){
-    socket.emit('noticeAddCanvas',{roomName:roomName});
+function onNewCanvas(message){
+  socket.emit('noticeAddCanvas',{roomName:roomName});
+}
+
+function onLineDrawed(message){
+  console.log('syncLineDrawed from '+message.target.from);
+
+  var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
+  var messageValue = message.body.value;
+  drawTool.drawLine(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
+  drawTool.clearLocus(targetID);
+}
+
+function onFreeDrawed(message){
+  console.log('syncFreeDrawed from '+message.target.from);
+  var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
+  var messageValue = message.body.value;
+  drawTool.resDrawCurve(targetID,messageValue.currentX,messageValue.currentY);
+
+  if(messageValue.mouseUp){
+    drawTool.clearLocus(targetID);
   }
+}
 
-  function onLineDrawed(message){
-    console.log('syncLineDrawed from '+message.target.from);
+function onRectDrawed(message){
+  console.log('syncRectDrawed from '+message.target.from);
+  var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
+  var messageValue = message.body.value;
+  drawTool.drawRect(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
+  drawTool.clearLocus(targetID);
+}
 
-      var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
-      var messageValue = message.body.value;
-      drawTool.drawLine(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
-      drawTool.clearLocus(targetID);
-  }
+function onCircleDrawed(message){
+  console.log('syncCircleDrawed from '+message.target.from);
+  var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
+  var messageValue = message.body.value;
+  drawTool.drawCircle(targetID,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
+}
 
-  function onFreeDrawed(message){
-    console.log('syncFreeDrawed from '+message.target.from);
-      var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
-      var messageValue = message.body.value;
-      drawTool.resDrawCurve(targetID,messageValue.currentX,messageValue.currentY);
-        
-      if(messageValue.mouseUp){
-        drawTool.clearLocus(targetID);
-      }
-  }
-
-  function onRectDrawed(message){
-    console.log('syncRectDrawed from '+message.target.from);
-      var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
-      var messageValue = message.body.value;
-      drawTool.drawRect(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
-      drawTool.clearLocus(targetID);
-  }
-
-  function onCircleDrawed(message){
-    console.log('syncCircleDrawed from '+message.target.from);
-    var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
-    var messageValue = message.body.value;
-    drawTool.drawCircle(targetID,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
-  }
-
-  function onPointerDrawed(message){
-      var targetID = 'canvasPointer'+message.target.from;
-      var messageValue = message.body.value;
-      drawTool.clearCanvas(targetID);
-      drawTool.drawPointer(targetID,messageValue.cx,messageValue.cy,messageValue.ux,messageValue.uy);
-  }
+function onPointerDrawed(message){
+  var targetID = 'canvasPointer'+message.target.from;
+  var messageValue = message.body.value;
+  drawTool.clearCanvas(targetID);
+  drawTool.drawPointer(targetID,messageValue.cx,messageValue.cy,messageValue.ux,messageValue.uy);
+}
 
 
-  function onAddCanvas(message){
-    var canvasID = message.target.from;
-    console.log(message.target.sendto);
+function onAddCanvas(message){
+  var canvasID = message.target.from;
+  console.log(message.target.sendto);
 
-    drawTool.addCanvas(canvasID);
-    if(message.target.sendto ==null){
+  drawTool.addCanvas(canvasID);
+  if(message.target.sendto ==null){
 
     socket.emit('noticeAddCanvas',{roomName:roomName,sendto:message.target.from});
-    }
   }
+}
 
-  function onClearPointerCanvas(message){
-      var targetID = 'canvasPointer'+message.target.from;
-      drawTool.clearCanvas(targetID);
-  }
+function onClearPointerCanvas(message){
+  var targetID = 'canvasPointer'+message.target.from;
+  drawTool.clearCanvas(targetID);
+}
 
-  function onBackCanvas(message){
-      var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
-      var messageValue = message.body.value;
+function onBackCanvas(message){
+  var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
+  var messageValue = message.body.value;
       //drawTool.pop();
-  }
+    }
 
-  function onPageNext(message){
+    function onPageNext(message){
       pdfNextPage();
-  }
+    }
 
-  function onPagePrev(message){
-    pdfPrevPage();
-  }
+    function onPagePrev(message){
+      pdfPrevPage();
+    }
 
 /*
 pdf初期呼び出し
 */
-  PDFJS.getDocument('kyoshida.pdf').then(function(pdf1) {
+PDFJS.getDocument('kyoshidatokai2015-983.pdf').then(function(pdf1) {
   // you can now use *pdf* here
   pdf = pdf1;
   pdfSize = pdf.numPages;
   pdf.getPage(pdfIndex).then(function(page) {
   // you can now use *page* here
 
-var viewport = page.getViewport(scale);
+  var viewport = page.getViewport(scale);
 
-canvas = document.getElementById(pdfCanvas);
-context = canvas.getContext('2d');
-canvas.height = viewport.height;
-canvas.width = viewport.width;
-pdfWidth = canvas.width;
-pdfHeight = canvas.height;
-$('#'+myCanvasDrawID+String(pdfIndex)).attr({
-  width:pdfWidth,
-  Height:pdfHeight,
-});
-$('#'+myCanvasPictureID+String(pdfIndex)).attr({
-  width:pdfWidth,
-  Height:pdfHeight,
-});
-$('#'+myCanvasPointerID).attr({
-  width:pdfWidth,
-  Height:pdfHeight,
-});
-var renderContext = {
-  canvasContext: context,
-  viewport: viewport
-};
-page.render(renderContext);
-
-
-    });
+  canvas = document.getElementById(pdfCanvas);
+  context = canvas.getContext('2d');
+  canvas.height = viewport.height;
+  canvas.width = viewport.width;
+  pdfWidth = canvas.width;
+  pdfHeight = canvas.height;
+  $('#'+myCanvasDrawID+String(pdfIndex)).attr({
+    width:pdfWidth,
+    Height:pdfHeight,
   });
+  $('#'+myCanvasPictureID+String(pdfIndex)).attr({
+    width:pdfWidth,
+    Height:pdfHeight,
+  });
+  $('#'+myCanvasPointerID).attr({
+    width:pdfWidth,
+    Height:pdfHeight,
+  });
+  var renderContext = {
+    canvasContext: context,
+    viewport: viewport
+  };
+  page.render(renderContext);
 
 
-  function pdfNextPage(){
-    if(pdfIndex<pdf.numPages){
+});
+});
+
+
+function pdfNextPage(){
+  if(pdfIndex<pdf.numPages){
 
       //canvasContainerに保管
       var draws = canvasContainer[pdfIndex].draw;
@@ -710,13 +710,13 @@ page.render(renderContext);
 
       pdfIndex++;
       pdf.getPage(pdfIndex).then(function(page){
-      var viewport = page.getViewport(scale);
-      var renderContext = {
-        canvasContext: context,
-        viewport : viewport
-      };
-      page.render(renderContext);
-    });
+        var viewport = page.getViewport(scale);
+        var renderContext = {
+          canvasContext: context,
+          viewport : viewport
+        };
+        page.render(renderContext);
+      });
 
 
       //canvasContainerのitemと入れ替え
@@ -767,14 +767,14 @@ page.render(renderContext);
 
         picts[pictureBoxChildren[j].id]=drawBoxChildren[j];
       }
-    pdfIndex--;
-    pdf.getPage(pdfIndex).then(function(page){
-      var viewport = page.getViewport(scale);
-      var renderContext = {
-        canvasContext: context,
-        viewport : viewport
-      };
-      page.render(renderContext);
+      pdfIndex--;
+      pdf.getPage(pdfIndex).then(function(page){
+        var viewport = page.getViewport(scale);
+        var renderContext = {
+          canvasContext: context,
+          viewport : viewport
+        };
+        page.render(renderContext);
 
       //canvasContainerのitemと入れ替え
       var drawsNext = canvasContainer[pdfIndex].draw;
@@ -820,13 +820,13 @@ page.render(renderContext);
   }
 
   function pdfDownload(pageNum){
-      if(1<= pageNum && pageNum<=pdf.numPages){
-       var options = {
-           orientation: "p",
-           unit: "pt",
-           format: "a4"
-        };
-        var doc = new jsPDF(options,'','','');
+    if(1<= pageNum && pageNum<=pdf.numPages){
+     var options = {
+       orientation: "p",
+       unit: "pt",
+       format: "a4"
+     };
+     var doc = new jsPDF(options,'','','');
         //var imgdata = canvas.toDataURL('image/png');
         //doc.addImage(imgdata,'png',canvas.style.left,canvas.style.top,canvas.widht,canvas.height);
         var imgdata = canvas.toDataURL('image/png');
@@ -835,22 +835,22 @@ page.render(renderContext);
 
         var img = new Image();
         img.onload=function(){
-             doc.addImage(img,'png',canvas.style.left,canvas.style.top,canvas.width,canvas.height);
+         doc.addImage(img,'png',canvas.style.left,canvas.style.top,canvas.width,canvas.height);
         //doc.output('datauri');
         doc.save('sample.pdf');
-        }
-
-        img.src = imgdata;
       }
+
+      img.src = imgdata;
+    }
   }
 
   function pdfOutputOne(canvasItem){
-        var options = {
-           orientation: "p",
-           unit: "pt",
-           format: "a4"
-        };
-        var doc = new jsPDF(options,'','','');
+    var options = {
+     orientation: "p",
+     unit: "pt",
+     format: "a4"
+   };
+   var doc = new jsPDF(options,'','','');
         //var imgdata = canvas.toDataURL('image/png');
         //doc.addImage(imgdata,'png',canvas.style.left,canvas.style.top,canvas.widht,canvas.height);
         var imgdata = canvasItem.toDataURL('image/png');
@@ -861,21 +861,21 @@ page.render(renderContext);
         img.onload=function(){
           doc.addImage(img,'png',canvasItem.style.left,canvasItem.style.top,canvasItem.width,canvasItem.height);
         //doc.output('datauri');
-          doc.save('sample.pdf');
-        }
+        doc.save('sample.pdf');
+      }
 
-        img.src = imgdata;
-       
-  }
+      img.src = imgdata;
 
-  function pdfShogaDownload(pageNum,doc,callback){
+    }
+
+    function pdfShogaDownload(pageNum,doc,callback){
       console.log(pageNum);
-     if(1<=pageNum && pageNum<= pdf.numPages){
-      pdf.getPage(pageNum).then(function(page){
-        var viewport = page.getViewport(scale);
+      if(1<=pageNum && pageNum<= pdf.numPages){
+        pdf.getPage(pageNum).then(function(page){
+          var viewport = page.getViewport(scale);
 
-        var cav = document.createElement('canvas');
-        var ctx = cav.getContext('2d');
+          var cav = document.createElement('canvas');
+          var ctx = cav.getContext('2d');
         //cav.width = viewport.width;
         //cav.height =　viewport.height;
         cav.height = pdfHeight;
@@ -890,18 +890,18 @@ page.render(renderContext);
 
         renderTask.promise.then(function () {
           console.log('ok');
-        ctx.fillStyle='red';
-        ctx.fillRect(0,0,35,35);
-        ctx.fillRect(cav.width-35,0,35,35);
-        ctx.fillRect(0,cav.height-35,35,35);
-        ctx.fillStyle="white";
-        ctx.fillRect(5,5,25,25);
-        ctx.fillRect(cav.width-30,5,25,25);
-        ctx.fillRect(5,cav.height-30,25,25);
-        ctx.fillStyle='red';
-        ctx.fillRect(10,10,15,15);
-        ctx.fillRect(cav.width-25,10,15,15);
-        ctx.fillRect(10,cav.height-25,15,15);
+          ctx.fillStyle='red';
+          ctx.fillRect(0,0,35,35);
+          ctx.fillRect(cav.width-35,0,35,35);
+          ctx.fillRect(0,cav.height-35,35,35);
+          ctx.fillStyle="white";
+          ctx.fillRect(5,5,25,25);
+          ctx.fillRect(cav.width-30,5,25,25);
+          ctx.fillRect(5,cav.height-30,25,25);
+          ctx.fillStyle='red';
+          ctx.fillRect(10,10,15,15);
+          ctx.fillRect(cav.width-25,10,15,15);
+          ctx.fillRect(10,cav.height-25,15,15);
         /*
         var options = {
            orientation: "p",
@@ -918,44 +918,44 @@ page.render(renderContext);
 
         var img = new Image();
         img.onload=function(){
-             doc.addImage(img,'png',canvas.style.left,canvas.style.top,canvas.width,canvas.height);
+         doc.addImage(img,'png',canvas.style.left,canvas.style.top,canvas.width,canvas.height);
         //doc.output('datauri');
        //doc.save('dample.pdf');
        if(pageNum== pdf.numPages){
         doc.save('shoga.pdf');
-       }else{
+      }else{
         doc.addPage();
-       }
-        callback();
-        }
-
-        img.src = imgdata;
-        });
-
-        
-      });
+      }
+      callback();
     }
-  }
 
-  function pdfShogaDownloadMulti(){
-        
-        var options = {
-           orientation: "p",
-           unit: "pt",
-           format: "a4"
-        };
-        var doc = new jsPDF(options,'','','');
-        
-          var i = 1;
-          var ar = new Array();
-          for(i=1;i<=pdf.numPages;i++){
-            ar.push(i);
-          }
+    img.src = imgdata;
+  });
 
-          async.forEachSeries(ar,function(value,callback){
-              console.log(value);
-              pdfShogaDownload(value,doc,callback);
-          });
+
+});
+}
+}
+
+function pdfShogaDownloadMulti(){
+
+  var options = {
+   orientation: "p",
+   unit: "pt",
+   format: "a4"
+ };
+ var doc = new jsPDF(options,'','','');
+
+ var i = 1;
+ var ar = new Array();
+ for(i=1;i<=pdf.numPages;i++){
+  ar.push(i);
+}
+
+async.forEachSeries(ar,function(value,callback){
+  console.log(value);
+  pdfShogaDownload(value,doc,callback);
+});
         /*
         for(i=1;i<=pdf.namPages;i++){
           console.log(i);
@@ -968,35 +968,35 @@ page.render(renderContext);
         }
         */
        // doc.save('sample.pdf');
-  }
+     }
 
-  function downloadCorrectedPDF(){
-    var options = {
+     function downloadCorrectedPDF(){
+      var options = {
        orientation: "p",
        unit: "pt",
        format: "a4"
-    };
-    var doc = new jsPDF(options,'','','');
+     };
+     var doc = new jsPDF(options,'','','');
 
-    var i = 1;
-    var ar = new Array();
-    for(i=1;i<=pdf.numPages;i++){
+     var i = 1;
+     var ar = new Array();
+     for(i=1;i<=pdf.numPages;i++){
       ar.push(i);
     }
 
     async.forEachSeries(ar,function(value,callback){
-        console.log(value);
-        unionCanvas(value,doc,callback);
+      console.log(value);
+      unionCanvas(value,doc,callback);
     });
 
   }
 
   function unionCanvas(pageNum,doc,callback){
     if(1<=pageNum && pageNum <=pdf.numPages){
-    pdf.getPage(pageNum).then(function(page){
-      
+      pdf.getPage(pageNum).then(function(page){
 
-    var viewport = page.getViewport(scale);
+
+        var viewport = page.getViewport(scale);
 
         var pdfCav = document.createElement('canvas');
         var ctx = pdfCav.getContext('2d');
@@ -1012,30 +1012,30 @@ page.render(renderContext);
         var renderTask = page.render(renderContext);
 
 
-    renderTask.promise.then(function () {
-      console.log(pdfCav+'okok');
-        var editCanvas = document.createElement('canvas');
-    
-        editCanvas.width = pdfWidth;
-        editCanvas.height = pdfHeight;
+        renderTask.promise.then(function () {
+          console.log(pdfCav+'okok');
+          var editCanvas = document.createElement('canvas');
 
-        var editCtx = editCanvas.getContext('2d');
-    
+          editCanvas.width = pdfWidth;
+          editCanvas.height = pdfHeight;
+
+          var editCtx = editCanvas.getContext('2d');
+
        // var drawBoxChildren = document.getElementById('drawBox').children;
        // var pictureBoxChildren =document.getElementById('pictureBox').children;
-        var drawBoxChildrenKey = Object.keys(canvasContainer[pageNum].draw);
-        var pictureBoxChildrenKey = Object.keys(canvasContainer[pageNum].picture);
+       var drawBoxChildrenKey = Object.keys(canvasContainer[pageNum].draw);
+       var pictureBoxChildrenKey = Object.keys(canvasContainer[pageNum].picture);
 
-        var unionList = new Array();
-    
-        unionList.push(pdfCav);
-    
-        drawBoxChildrenKey.forEach(function(value,index,arr){
-          unionList.push(canvasContainer[pageNum].draw[value]);
-        });
-        pictureBoxChildrenKey.forEach(function(value,index,arr){
-          unionList.push(canvasContainer[pageNum].picture[value]);
-        });
+       var unionList = new Array();
+
+       unionList.push(pdfCav);
+
+       drawBoxChildrenKey.forEach(function(value,index,arr){
+        unionList.push(canvasContainer[pageNum].draw[value]);
+      });
+       pictureBoxChildrenKey.forEach(function(value,index,arr){
+        unionList.push(canvasContainer[pageNum].picture[value]);
+      });
         /*
         for(var i=0;i<drawBoxChildren.length;i++){
           unionList.push(drawBoxChildren[i]);
@@ -1044,7 +1044,7 @@ page.render(renderContext);
           unionList.push(pictureBoxChildren[j]);
         }
         */
-    
+
         var func1 = function(done){
           async.each(unionList,function(value,callback){
             console.log(value);
@@ -1053,12 +1053,12 @@ page.render(renderContext);
           done(null,'val');
         }
         async.waterfall([
-        func1
-        ],function(err,result){
+          func1
+          ],function(err,result){
 
-          if(err){
-            console.error(err);
-          }else{
+            if(err){
+              console.error(err);
+            }else{
             //TODO addpage
             //pdfOutputOne(editCanvas);
             var imgdata = editCanvas.toDataURL('image/png');
@@ -1070,37 +1070,37 @@ page.render(renderContext);
               doc.addImage(img,'png',editCanvas.style.left,editCanvas.style.top,editCanvas.width,editCanvas.height);
                //doc.output('datauri');
                 //doc.save('sample.pdf');
-              if(pageNum== pdf.numPages){
-                doc.save('corrected.pdf');
-              }else{
+                if(pageNum== pdf.numPages){
+                  doc.save('corrected.pdf');
+                }else{
                  doc.addPage();
-              }
-              callback();
-          
-            }
+               }
+               callback();
 
-            img.src = imgdata;
+             }
 
-          }
-        });
+             img.src = imgdata;
+
+           }
+         });
       });
-    });
+});
 
-    }
+}
+}
+
+function drawImageCanvas(canvasItem,eCanvas,callback){
+  var img = new Image();
+  var imgUrl = canvasItem.toDataURL('image/png');
+  var pdfctx = eCanvas.getContext('2d');
+  img.onload=function(){
+    pdfctx.drawImage(img,0,0);
+    console.log(imgUrl);
+    callback();
   }
+  img.src = imgUrl;
 
-  function drawImageCanvas(canvasItem,eCanvas,callback){
-    var img = new Image();
-    var imgUrl = canvasItem.toDataURL('image/png');
-    var pdfctx = eCanvas.getContext('2d');
-    img.onload=function(){
-      pdfctx.drawImage(img,0,0);
-      console.log(imgUrl);
-      callback();
-    }
-    img.src = imgUrl;
-
-  }
+}
 /*
 $('#the-canvas').click(function(e){
   var canvas = document.getElementById('the-canvas');
@@ -1194,7 +1194,7 @@ $('#next_button').click(function(e){
   //TODO ページめくり
   pdfNextPage();
   socket.json.emit('noticeNextPage',{
-      roomName:roomName
+    roomName:roomName
   });
 });
 $('#prev_button').click(function(e){
@@ -1203,7 +1203,7 @@ $('#prev_button').click(function(e){
   pdfPrevPage();
 
   socket.json.emit('noticePrevPage',{
-      roomName:roomName
+    roomName:roomName
   });
 });
 $('#pointer_button').click(function(e){
@@ -1223,8 +1223,8 @@ $('#pointer_button').click(function(e){
 $('#download_button').click(function(e){
     //unionCanvas(1);
     downloadCorrectedPDF()
-  console.log('donwload');
-});
+    console.log('donwload');
+  });
 $('#shoga_download_button').click(function(e){
     //pdfShogaDownloadMulti();
     
@@ -1244,8 +1244,8 @@ $('#shoga_download_button').click(function(e){
       ia.removeChild(nr);
     }
 
-  console.log('shoga download');
-});
+    console.log('shoga download');
+  });
 
 
 //初期リスナーセット
@@ -1254,56 +1254,56 @@ $('#shoga_download_button').click(function(e){
 var setArr = new Array();
 for(var i = 1;i<=20;i++){
 
-    var newElement1 = document.createElement('canvas');
-    var newElement2 = document.createElement('canvas');
-    newElement1.id=myCanvasDrawID+String(i);
-    newElement2.id=myCanvasPictureID+String(i);
+  var newElement1 = document.createElement('canvas');
+  var newElement2 = document.createElement('canvas');
+  newElement1.id=myCanvasDrawID+String(i);
+  newElement2.id=myCanvasPictureID+String(i);
 
-    newElement1.width = pdfWidth;
-    newElement2.width = pdfWidth;
+  newElement1.width = pdfWidth;
+  newElement2.width = pdfWidth;
 
-    newElement1.height = pdfHeight;
-    newElement2.height = pdfHeight;
+  newElement1.height = pdfHeight;
+  newElement2.height = pdfHeight;
 
-    newElement1.style.zIndex=4;
-    newElement2.style.zIndex=2;
+  newElement1.style.zIndex=4;
+  newElement2.style.zIndex=2;
 
-    newElement1.style.position='absolute';
-    newElement2.style.position='absolute';
+  newElement1.style.position='absolute';
+  newElement2.style.position='absolute';
 
-    newElement1.style.backgroundColor='transparent';
-    newElement2.style.backgroundColor='transparent';
-    canvasContainer[i]={
-      draw:{},
-      picture:{}
-    }
-    canvasContainer[i].draw[myCanvasDrawID]=newElement1;
-    canvasContainer[i].picture[myCanvasPictureID]=newElement2;
+  newElement1.style.backgroundColor='transparent';
+  newElement2.style.backgroundColor='transparent';
+  canvasContainer[i]={
+    draw:{},
+    picture:{}
+  }
+  canvasContainer[i].draw[myCanvasDrawID]=newElement1;
+  canvasContainer[i].picture[myCanvasPictureID]=newElement2;
     //module.setEventListener(canvasID)
 
     //TODO イベントリスナーセット
     setArr.push(i);
 
-}
+  }
 
-setArr.forEach(function(value,index,arr){
-  console.log('event set');
-  drawTool.setEventListener(myCanvasDrawID+String(value));
-  drawTool[myCanvasDrawID+String(value)] = {};
-  drawTool[myCanvasDrawID+String(value)].semiOldPointX=null;
-  drawTool[myCanvasDrawID+String(value)].semiOldPointY=null;
-  drawTool[myCanvasDrawID+String(value)].oldPointX=null;
-  drawTool[myCanvasDrawID+String(value)].oldPointY=null;  
-});
+  setArr.forEach(function(value,index,arr){
+    console.log('event set');
+    drawTool.setEventListener(myCanvasDrawID+String(value));
+    drawTool[myCanvasDrawID+String(value)] = {};
+    drawTool[myCanvasDrawID+String(value)].semiOldPointX=null;
+    drawTool[myCanvasDrawID+String(value)].semiOldPointY=null;
+    drawTool[myCanvasDrawID+String(value)].oldPointX=null;
+    drawTool[myCanvasDrawID+String(value)].oldPointY=null;  
+  });
 
 
 
-drawTool.setEventListener(myCanvasPointerID);
-drawTool[myCanvasPointerID] = {};
-drawTool[myCanvasPointerID].semiOldPointX=null;
-drawTool[myCanvasPointerID].semiOldPointY=null;
-drawTool[myCanvasPointerID].oldPointX=null;
-drawTool[myCanvasPointerID].oldPointY=null;
+  drawTool.setEventListener(myCanvasPointerID);
+  drawTool[myCanvasPointerID] = {};
+  drawTool[myCanvasPointerID].semiOldPointX=null;
+  drawTool[myCanvasPointerID].semiOldPointY=null;
+  drawTool[myCanvasPointerID].oldPointX=null;
+  drawTool[myCanvasPointerID].oldPointY=null;
 
 
 /**
@@ -1318,19 +1318,19 @@ drawTool[myCanvasPointerID].oldPointY=null;
 
 
 
-   var localVideo = document.getElementById('local-video');
-    $('#local-video').draggable({
-        drag:sendVideoPositionChanged,
-        containment:'parent'
-    });
-    $('#item_area').dblclick(function(e){
-      if($('#local-video').zIndex()== 5){
-        $('#local-video').zIndex(10);
-      }
-      else{
-        $('#local-video').zIndex(5);
-      }
-    });
+ var localVideo = document.getElementById('local-video');
+ $('#local-video').draggable({
+  drag:sendVideoPositionChanged,
+  containment:'parent'
+});
+ $('#item_area').dblclick(function(e){
+  if($('#local-video').zIndex()== 5){
+    $('#local-video').zIndex(10);
+  }
+  else{
+    $('#local-video').zIndex(5);
+  }
+});
 
   //var remoteVideo = document.getElementById('remote-video');
   var localStream = null;
@@ -1341,8 +1341,8 @@ drawTool[myCanvasPointerID].oldPointY=null;
   var videoElementsStandBy = {};
   var myCenterX=0;
   var myCenterY=0;
-  var centerX = new Array();
-  var centerY = new Array();
+  var centerX = {};
+  var centerY = {};
   var userVideoCount =0;
   var userVideoColor={};
   //$('#start_button').click(startVideo);
@@ -1356,16 +1356,16 @@ drawTool[myCanvasPointerID].oldPointY=null;
   var roomName ="_defaultroom";
 
   function sendVideoPositionChanged(e,ui){
-      myCenterX = $('#local-video').offset().left;
-      myCenterY = $('#local-video').offset().top;
+    myCenterX = $('#local-video').offset().left;
+    myCenterY = $('#local-video').offset().top;
 
-      var sendObj={
-        top:$('#local-video').offset().top,
-        left:$('#local-video').offset().left,
-        roomName:roomName
-      }
-      socket.emit('changeVideoPosition',sendObj);
-      setAllVideoVolume();
+    var sendObj={
+      top:$('#local-video').offset().top,
+      left:$('#local-video').offset().left,
+      roomName:roomName
+    }
+    socket.emit('changeVideoPosition',sendObj);
+    setAllVideoVolume();
   }
 
   function getVideoForRemote(index) {
@@ -1401,11 +1401,11 @@ drawTool[myCanvasPointerID].oldPointY=null;
 
   function generateItemWithId(id){
     if(!userVideoColor[id]){
-    userVideoColor[id] = getUserColor();
+      userVideoColor[id] = getUserColor();
     }
     var itemHtml = 
     '<video id="'+id+'"'+
-    'autoplay style="width:240px;height:180px;position:absolute;-webkit-transform: scaleX(-1);margin:0px 0px 0px 0px;zIndex:1;">';
+    'autoplay width="240" height="180" style="width:240px;height:180px;position:absolute;-webkit-transform: scaleX(-1);margin:0px 0px 0px 0px;zIndex:1;">';
 
     $('#item_area').append(itemHtml);
     var elm = document.getElementById(id);
@@ -1419,32 +1419,32 @@ drawTool[myCanvasPointerID].oldPointY=null;
       userVideoCount = userVideoCount % MAX_CONNECTION_COUNT;//6
       switch(userVideoCount++){
         case 0:
-          return 'red';
+        return 'red';
         break;
         case 1:
-          return 'blue';
+        return 'blue';
         break;
         case 2:
-          return 'green';
+        return 'green';
         break;
         case 3:
-          return 'gray';
+        return 'gray';
         break;
         case 4:
-          return 'orange';
+        return 'orange';
         break;
         case 5:
-          return 'purple';
+        return 'purple';
         break;
         default:
-          return 'black';
+        return 'black';
         break;
       }
-  }
+    }
 
 
-  function attachVideo(id, stream) {
-    console.log('try to attach video. id=' + id);
+    function attachVideo(id, stream) {
+      console.log('try to attach video. id=' + id);
     //TODO
     //var videoElement = popVideoStandBy();
     var videoElement=generateItemWithId(id);
@@ -1608,54 +1608,54 @@ drawTool[myCanvasPointerID].oldPointY=null;
     console.log('----------------\n'+evt.body.type+'\n------------------');
     if (evt.body.type === 'call') {
       if (! isLocalStreamStarted()) {
-	    return;
-	  }
-      if (conn) {
+       return;
+     }
+     if (conn) {
 	    return;  // already connected
 	  }
 
-      if (isConnectPossible()) {
-        socket.json.emit('signaling',{target:{sendto:id,from:null},body:{type: "response"}});
-      }
-      else {
-	    console.warn('max connections. so ignore call'); 
-	  }
-	  return;
+    if (isConnectPossible()) {
+      socket.json.emit('signaling',{target:{sendto:id,from:null},body:{type: "response"}});
     }
-    else if (evt.body.type === 'response') {
-      sendOffer(evt);
-      return;
-    } else if (evt.body.type === 'offer') {
-      console.log("Received offer, set offer, sending answer....");
-      onOffer(evt);	  
+    else {
+     console.warn('max connections. so ignore call'); 
+   }
+   return;
+ }
+ else if (evt.body.type === 'response') {
+  sendOffer(evt);
+  return;
+} else if (evt.body.type === 'offer') {
+  console.log("Received offer, set offer, sending answer....");
+  onOffer(evt);	  
     } else if (evt.body.type === 'answer' && isPeerStarted()) {  // **
       console.log('Received answer, settinng answer SDP');
-	  onAnswer(evt);
+      onAnswer(evt);
     } else if (evt.body.type === 'candidate' && isPeerStarted()) { // **
       console.log('Received ICE candidate...');
-	  onCandidate(evt);
+      onCandidate(evt);
 
     } else if (evt.body.type === 'user disconnected' && isPeerStarted()) { // **
       console.log("disconnected");
       //stop();
 	     detachVideo(id); // force detach video
-      stopConnection(id);
-    }
-  }
+       stopConnection(id);
+     }
+   }
 
-  function onPositionChanged(message){
-      var targetID = message.target.from;
-      $('#'+targetID).css({
-        top:message.body.value.top,
-        left:message.body.value.left
-      });
-      centerX[targetID] = message.body.value.left;
-      centerY[targetID] = message.body.value.top;
-      setVideoVolume(targetID);
+   function onPositionChanged(message){
+    var targetID = message.target.from;
+    $('#'+targetID).css({
+      top:message.body.value.top,
+      left:message.body.value.left
+    });
+    centerX[targetID] = message.body.value.left;
+    centerY[targetID] = message.body.value.top;
+    setVideoVolume(targetID);
   }
 
   function onPositionInitialize(message){
-      sendVideoPositionChanged();
+    sendVideoPositionChanged();
   }
 
 
@@ -1712,78 +1712,78 @@ drawTool[myCanvasPointerID].oldPointY=null;
   
   function onOffer(evt) {
     console.log("Received offer...");
-	console.log(evt);
+    console.log(evt);
     setOffer(evt);
-	sendAnswer(evt);
+    sendAnswer(evt);
 	//peerStarted = true; --
-  }
-  
-  function onAnswer(evt) {
-    console.log("Received Answer...");
-	console.log(evt);
-	setAnswer(evt);
-  }
-  
-  function onCandidate(evt) {
+}
+
+function onAnswer(evt) {
+  console.log("Received Answer...");
+  console.log(evt);
+  setAnswer(evt);
+}
+
+function onCandidate(evt) {
 	var id = evt.target.from;
-    var conn = getConnection(id);
-    if (! conn) {
-	  console.error('peerConnection not exist!');
-	  return;
-	}
-    
+  var conn = getConnection(id);
+  if (! conn) {
+   console.error('peerConnection not exist!');
+   return;
+ }
+
     // --- check if ice ready ---
     if (! conn.iceReady) {
       console.warn("PeerConn is not ICE ready, so ignore");
       return;
     }
-	  
+
     var candidate = new RTCIceCandidate({sdpMLineIndex:evt.body.sdpMLineIndex, sdpMid:evt.body.sdpMid, candidate:evt.body.candidate});
     console.log("Received Candidate...");
-	console.log(candidate);
+    console.log(candidate);
     conn.peerconnection.addIceCandidate(candidate);
   }
 
   function sendSDP(sdp) {
     var text = JSON.stringify(sdp);
-	console.log("---sending sdp text ---");
-	console.log(text);
-  
+    console.log("---sending sdp text ---");
+    console.log(text);
+
 	//textForSendSDP.value = text;
 	
 	// send via socket
 	socket.json.emit('signaling',sdp);
-  }
-  
-  function sendCandidate(candidate) {
-    var text = JSON.stringify(candidate);
-	console.log("---sending candidate text ---");
-	console.log(text);
+}
+
+function sendCandidate(candidate) {
+  var text = JSON.stringify(candidate);
+  console.log("---sending candidate text ---");
+  console.log(text);
 	//textForSendICE.value = (textForSendICE.value + CR + iceSeparator + CR + text + CR);
 	//textForSendICE.scrollTop = textForSendICE.scrollHeight;
 	
 	// send via socket
 	socket.json.emit('signaling',candidate);
-  }
-  
+}
+
   // ---------------------- video handling -----------------------
   // start local video
   function startVideo() {
-	navigator.webkitGetUserMedia({video: true, audio: true},
+   navigator.webkitGetUserMedia({video: true, audio: true},
      function (stream) { // success
       localStream = stream;
       localVideo.src = window.webkitURL.createObjectURL(stream);
       localVideo.play();
-	    localVideo.volume = 0;
+      localVideo.volume = 0;
       call();
-     },
+    },
      function (error) { // error
       console.error('An error occurred:');
       console.error(error);
       return;
-     }
-	);
-  }
+    }
+    );
+ }
 
   // stop local video
   function stopVideo() {
@@ -1793,7 +1793,8 @@ drawTool[myCanvasPointerID].oldPointY=null;
 
   function setVideoVolume(id){
     var targetVideo = document.getElementById(id);
-    //console.log(targetVideo);
+    console.log(targetVideo);
+    console.log(id);
     var dist = euclidDist(id);
     if(dist<120){
       targetVideo.volume=1.0;
@@ -1809,14 +1810,14 @@ drawTool[myCanvasPointerID].oldPointY=null;
     //console.log(keys);
     keys.forEach(function(value,index,arr){
        // console.log('change volume in '+ value);
-        setVideoVolume(value);
-    });
+       setVideoVolume(value);
+     });
   }
 
   function euclidDist(id){
       //想定myCenterXとcenterX[]が存在している
       return distance = Math.sqrt((myCenterX-centerX[id])*(myCenterX-centerX[id])+(myCenterY-centerY[id])*(myCenterY-centerY[id]));
-  }
+    }
 
   // ---------------------- connection handling -----------------------
   function prepareNewConnection(id) {
@@ -1838,10 +1839,10 @@ drawTool[myCanvasPointerID].oldPointY=null;
       if (evt.candidate) {
         console.log(evt.candidate);
         sendCandidate({target:{sendto:conn.id,from:null},body:{type: "candidate", 
-                          sendto: conn.id,
-                          sdpMLineIndex: evt.candidate.sdpMLineIndex,
-                          sdpMid: evt.candidate.sdpMid,
-                          candidate: evt.candidate.candidate}});
+          sendto: conn.id,
+          sdpMLineIndex: evt.candidate.sdpMLineIndex,
+          sdpMid: evt.candidate.sdpMid,
+          candidate: evt.candidate.candidate}});
       } else {
         console.log("End of candidates. ------------------- phase=" + evt.eventPhase);
         conn.established = true;
@@ -1861,7 +1862,7 @@ drawTool[myCanvasPointerID].oldPointY=null;
       attachVideo(this.id, event.stream);
 
 	  //remoteVideo.src = window.webkitURL.createObjectURL(event.stream);
-    }
+  }
 
     // when remote removes a stream, remove it from the local video element
     function onRemoteStreamRemoved(event) {
@@ -1876,69 +1877,69 @@ drawTool[myCanvasPointerID].oldPointY=null;
 
   function sendOffer(evt) {
     var id = evt.target.from;
-	   var conn = getConnection(id);
+    var conn = getConnection(id);
     if (!conn) {
       conn = prepareNewConnection(id);
     }
 
 	conn.peerconnection.createOffer(function (sessionDescription) { // in case of success
-      conn.iceReady = true;
-      conn.peerconnection.setLocalDescription(sessionDescription);
-      var sendObj ={target:{sendto:id,from:''},body:sessionDescription};
+    conn.iceReady = true;
+    conn.peerconnection.setLocalDescription(sessionDescription);
+    var sendObj ={target:{sendto:id,from:''},body:sessionDescription};
 	  //sendSDP(sessionDescription);
-      sendSDP(sendObj);
+    sendSDP(sendObj);
     }, function () { // in case of error
       console.log("Create Offer failed");
     }, mediaConstraints);
-    conn.iceReady = true;
-  }
+  conn.iceReady = true;
+}
 
-  function setOffer(evt) {
+function setOffer(evt) {
 	var id = evt.target.from;
-    var conn = getConnection(id);
-    if (! conn) {
-      conn = prepareNewConnection(id);
-      conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt.body));
-    }
-	else {
-	  console.error('peerConnection alreay exist!');
-	}
+  var conn = getConnection(id);
+  if (! conn) {
+    conn = prepareNewConnection(id);
+    conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt.body));
   }
-  
-  function sendAnswer(evt) {
-    console.log('sending Answer. Creating remote session description...' );
-	var id = evt.target.from;
-    var conn = getConnection(id);
-    if (! conn) {
-	  console.error('peerConnection not exist!');
-	  return;
-    }
+  else {
+   console.error('peerConnection alreay exist!');
+ }
+}
 
-    conn.peerconnection.createAnswer(function (sessionDescription) { 
+function sendAnswer(evt) {
+  console.log('sending Answer. Creating remote session description...' );
+  var id = evt.target.from;
+  var conn = getConnection(id);
+  if (! conn) {
+   console.error('peerConnection not exist!');
+   return;
+ }
+
+ conn.peerconnection.createAnswer(function (sessionDescription) { 
       // in case of success
       conn.iceReady = true;
       conn.peerconnection.setLocalDescription(sessionDescription);
       //sessionDescription.sendto = id;
 	  //sendSDP(sessionDescription);
     var sendObj ={body:sessionDescription,target:{sendto:id,from:''}};
-      sendSDP(sendObj);
+    sendSDP(sendObj);
     }, function () { // in case of error
       console.log("Create Answer failed");
     }, mediaConstraints);
-    conn.iceReady = true;
-  }
+ conn.iceReady = true;
+}
 
-  function setAnswer(evt) {
+function setAnswer(evt) {
 	var id = evt.target.from;
-    var conn = getConnection(id);
-    if (! conn) {
-	  console.error('peerConnection not exist!');
-	  return;
-    }
-    conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt.body));
+  var conn = getConnection(id);
+  if (! conn) {
+   console.error('peerConnection not exist!');
+   return;
+ }
+ conn.peerconnection.setRemoteDescription(new RTCSessionDescription(evt.body));
 
-  }
-  
+}
+
   // -------- handling user UI event -----
   /*-----
   // start the connection upon user request
@@ -1998,30 +1999,30 @@ drawTool[myCanvasPointerID].oldPointY=null;
  */
 
 
-var shogaDraw = function (canvas) {
-		var context = canvas.getContext('2d');
-		console.log(localVideo.width);
-		console.log(localVideo.height);
-		console.log(localVideo.style.width);
-		console.log(localVideo.style.height);
-		console.log(canvas.height);
-		console.log(canvas.width);
-        context.drawImage(localVideo,0,10,400/Math.sqrt(2)+58,463,0, 0,canvas.width,canvas.height);
+ var shogaDraw = function (canvas) {
+  var context = canvas.getContext('2d');
+  console.log(localVideo.width);
+  console.log(localVideo.height);
+  console.log(localVideo.style.width);
+  console.log(localVideo.style.height);
+  console.log(canvas.height);
+  console.log(canvas.width);
+  context.drawImage(localVideo,0,10,400/Math.sqrt(2)+58,463,0, 0,canvas.width,canvas.height);
         // ここでクロマキー処理をする
 
         chromaKey(canvas);
         
-    };
+      };
 
     // 消す色と閾値
     var chromaKeyColor = {r: 0, g: 255, b: 255},
-        colorDistance = 200;
+    colorDistance = 200;
 
     // クロマキー処理
     var chromaKey = function (canvas) {
     	var context = canvas.getContext('2d');
-        var imageData = context.getImageData(0, 0, canvas.width, canvas.height),
-            data = imageData.data;
+      var imageData = context.getImageData(0, 0, canvas.width, canvas.height),
+      data = imageData.data;
 
         // dataはUint8ClampedArray
         // 長さはcanvasの width * height * 4(r,g,b,a)
@@ -2031,11 +2032,11 @@ var shogaDraw = function (canvas) {
         console.log(data.length/4);
 
         for (var i = 0, l = data.length; i < l; i += 4) {
-            var target = {
-                    r: data[i],
-                    g: data[i + 1],
-                    b: data[i + 2]
-                };
+          var target = {
+            r: data[i],
+            g: data[i + 1],
+            b: data[i + 2]
+          };
 
           
             // chromaKeyColorと現在のピクセルの三次元空間上の距離を閾値と比較する
@@ -2043,46 +2044,46 @@ var shogaDraw = function (canvas) {
             if (getColorDistance(chromaKeyColor, target) < colorDistance) {
                 // alpha値を0にすることで見えなくする
                 data[i + 3] = 0;
+              }
+
+              if(target.r >= (target.g+target.b)){
+                data[i+3]=0;
+              }
+
+
+
+              var hsv = rgb_to_hsv([target.r,target.g,target.b]);
+              if(!isHSVonRED(hsv)){
+                data[i+3]=0;
+              }
+
+
             }
-
-            if(target.r >= (target.g+target.b)){
-              data[i+3]=0;
-            }
-            
-			
-		
-			       var hsv = rgb_to_hsv([target.r,target.g,target.b]);
-			       if(!isHSVonRED(hsv)){
-				      data[i+3]=0;
-			       }
-
-
-        }
 
         // 書き換えたdataをimageDataにもどし、描画する
         imageData.data = data;
         context.putImageData(imageData, 0, 0);
-    };
+      };
 
     // r,g,bというkeyを持ったobjectが第一引数と第二引数に渡される想定
-   var getColorDistance = function (rgb1, rgb2) {
+    var getColorDistance = function (rgb1, rgb2) {
         // 三次元空間の距離が返る
         return Math.sqrt(
-            Math.pow((rgb1.r - rgb2.r), 2) +
-            Math.pow((rgb1.g - rgb2.g), 2) +
-            Math.pow((rgb1.b - rgb2.b), 2)
-        );
-    };
+          Math.pow((rgb1.r - rgb2.r), 2) +
+          Math.pow((rgb1.g - rgb2.g), 2) +
+          Math.pow((rgb1.b - rgb2.b), 2)
+          );
+      };
 
 
 
-    function isHSVonRED(hsv){
-  var h = hsv[0];
-  var s = hsv[1];
-  var v = hsv[2];
-  var flagH=false;
-  var flagS=false;
-  var flagV=false;
+      function isHSVonRED(hsv){
+        var h = hsv[0];
+        var s = hsv[1];
+        var v = hsv[2];
+        var flagH=false;
+        var flagS=false;
+        var flagV=false;
   //閾値は独自設定
   if((0<=h && h<=20) || (340<=h && h<=360)){
     flagH=true;
@@ -2099,14 +2100,14 @@ var shogaDraw = function (canvas) {
 
 }
 function rgb_to_hsv(rgb){
-    var r = rgb[0];
-    var g = rgb[1];
-    var b = rgb[2];
-    var h;
-    var s;
-    var v;
-    var max = Math.max(r,Math.max(g,b));
-    var min = Math.min(r,Math.min(g,b));
+  var r = rgb[0];
+  var g = rgb[1];
+  var b = rgb[2];
+  var h;
+  var s;
+  var v;
+  var max = Math.max(r,Math.max(g,b));
+  var min = Math.min(r,Math.min(g,b));
     //h
     if(max == min){
       h=0;
@@ -2128,10 +2129,9 @@ function rgb_to_hsv(rgb){
 
     return [h,s,v];
 
-}
+  }
 
 
 
 
 });
-  
