@@ -18,28 +18,34 @@
     <input id="free_button" type="button" value="F">
     <input id="line_button" type="button" value="L">
     <input id="rect_button" type="button" value="R">
+    <input id="text_box" type="text" style="width:200px;" placeholder="input text and click -> T">
     <input id="text_button" type="button" value="T">
     <input id="circle_button" type="button" value="C">
-    <input id="back_button" type="button" value="B">
-    <input id="next_button" type="button" value=">">
-    <input id="prev_button" type="button" value="<">
     <input id="pointer_button" type="button" value="P">
-    <input id="download_button" type="button" value="D">
     <input id="shoga_download_button" type="button" value="S">
+    <input id="back_button" type="button" value="B">
+    <input id="prev_button" type="button" value="<">
+    <input id="next_button" type="button" value=">">
+    <input id="download_button" type="button" value="D">
 
   </div>
   <div id="canvasBox">
     <div id="pdfBox">
      <canvas id="pdfCanvas" style="background-color:transparent;position: absolute;z-index: 1;border:1px solid black;"></canvas>
      </div>
+     
      <div id="pictureBox" style="background-color:transparent;position: absolute;z-index: 2;">
+     
      <canvas id="myCanvasPicture1" style="background-color:transparent;position: absolute;z-index: 2;"></canvas>
+     
      </div>
      <div id="pointerBox" style="background-color:transparent;position: absolute;z-index: 3;">
      <canvas id="myCanvasPointer" style="background-color:transparent;position: absolute;z-index: 3;"></canvas>
      </div>
      <div id="drawBox" style="background-color:transparent;position: absolute;z-index: 4;">
+     
      <canvas id="myCanvasDraw1" style="background-color:transparent;position: absolute;z-index: 4;"></canvas>
+     
       </div>
   </div>
 </div>
@@ -52,10 +58,11 @@
    -->
   </div>
 
-<!--
 <script src="http://133.68.112.180:9001/socket.io/socket.io.js"></script>
--->
+
+<!--
 <script src = "http://127.0.0.1:9001/socket.io/socket.io.js"></script>
+-->
 <script src="./VideoCorrectionSocket.js"></script>
 
 </body>

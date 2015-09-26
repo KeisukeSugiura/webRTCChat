@@ -1,8 +1,8 @@
 $(function(){
   var socketReady = false;
   var port = 9001;
-  //var socket = io.connect('http://133.68.112.180:' +  port + '/');
-  var socket = io.connect('http://127.0.0.1:' + port + '/');
+  var socket = io.connect('http://133.68.112.180:' +  port + '/');
+  //var socket = io.connect('http://127.0.0.1:' + port + '/');
   //
   //
 
@@ -19,6 +19,18 @@ $(function(){
   var currentPageNumber;
   var pushing=false;
   var PDF;
+
+  var userColors = {
+    red:true,
+    blue:true,
+    yellow:true,
+    lime:true,
+    violet:true,
+    cyan:true,
+    orangered:true
+  };
+
+  var myColor = null;
   //PDF生成のタイミングで取得やるとCanvasの大きさがめちゃくちゃになる
   //TODO ヒューリスティクス->自動化
   var pdf;
@@ -42,6 +54,7 @@ $(function(){
   .on('syncPointer',onPointerDrawed)
   .on('syncPicture',onPictureDrawed)
   .on('syncText',onTextDrawed)
+  .on('syncUserColor',onUserColorSet)
   .on('addCanvas',onAddCanvas)
   .on('clearPointerCanvas',onClearPointerCanvas)
   .on('syncBackCanvas',onBackCanvas)
@@ -57,7 +70,7 @@ $(function(){
 
     roomName = getRoomName(); // 会議室名を取得する
     socket.emit('enter', roomName);
-    socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null});
+    socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null,colors:userColors});
     console.log('enter to ' + roomName);
   }
 
@@ -203,6 +216,16 @@ var drawTool = (function(){
     ctx.stroke();
   }
 
+  module.drawText = function(canvasID,txt,cx,cy){
+      var cav = document.getElementById(canvasID);
+      var ctx = cav.getContext('2d');
+      
+      ctx.font = 'normal normal 15px Century Gothic';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';  
+      ctx.fillText(txt,cx,cy);
+  }
+
   module.clearCanvas = function(canvasID){
     var cav = document.getElementById(canvasID);
     var ctx = cav.getContext('2d');
@@ -275,8 +298,10 @@ var drawTool = (function(){
 
     var ectx3 = newElement3.getContext('2d');
     
+    //色    
     if(!userVideoColor[canvasID]){
-      userVideoColor[canvasID] = getUserColor();
+      console.log('notDefined userColor');
+     // userVideoColor[canvasID] = getUserColor();
     }
     ectx3.fillStyle=String(userVideoColor[canvasID]);
     ectx3.strokeStyle=String(userVideoColor[canvasID]);
@@ -292,6 +317,7 @@ var drawTool = (function(){
     });
 
     //いるたぶん
+    
     module['canvasDraw'+canvasID+String(pdfIndex)] = {};
     module['canvasDraw'+canvasID+String(pdfIndex)].semiOldPointY=null;
     module['canvasDraw'+canvasID+String(pdfIndex)].semiOldPointX=null;
@@ -381,6 +407,9 @@ $('#'+canvasID).mousemove(function(e){
     break;
     case 4:
     //テキスト
+    //TODO 表示
+    module.clearCanvas(canvasID);
+    module.drawText(canvasID,document.getElementById('text_box').value,e.pageX-5,e.pageY-30);
     break;
     case 5:
     //ポインタ
@@ -454,10 +483,75 @@ $('#'+canvasID).mouseup(function(e){
     break;
     case 4:
     //テキスト
-    module.clearLocus(canvasID);
+    var targetCanvasID = canvasID.replace('Pointer','Draw'+String(pdfIndex));
+    console.log(targetCanvasID);
+
+    module.pushStatus(targetCanvasID);
+    module.drawText(targetCanvasID,document.getElementById('text_box').value,e.pageX-5,e.pageY-30);
+    socket.json.emit('noticeTextDrawed',{
+      roomName:roomName,
+      cx:e.pageX-5,
+      cy:e.pageY-30,
+      txt:document.getElementById('text_box').value
+    });
     break;
     case 5:
     //ポインタ
+    module.clearCanvas(canvasID);
+    socket.json.emit('noticeClearPointerCanvas',{
+      roomName:roomName,
+      cx:e.pageX-5,
+      cy:e.pageY-30,
+      ux:$('#local-video').offset().left-10,
+      uy:$('#local-video').offset().top+90-40
+    });
+    pushing = false;
+    break;
+  }
+});
+$('#'+canvasID).mouseout(function(e){
+  pushing=false;
+  console.log('mouseOut');
+  switch(module.mode){
+    case 0:
+    //自由
+    //var canvas = document.getElementById('the-canvas');
+    //var ctx = canvas.getContext('2d');
+    module.drawCurve(canvasID,e.pageX-5,e.pageY-30);
+
+    module.clearLocus(canvasID);
+    socket.json.emit('noticeFreeDrawed',{
+      roomName:roomName,
+      currentX:e.pageX-5,
+      currentY:e.pageY-30,
+      mouseUp:true,
+      mouseDown:false
+    });
+    if(canvasID == myCanvasDrawID+String(pdfIndex)){
+      pushing=false;
+    }
+    break;
+    case 1:
+    //線
+    module.clearLocus(canvasID);
+    break;
+    case 2:
+    //四角
+    module.clearLocus(canvasID);
+    break;
+    case 3:
+    //円
+    
+    module.clearLocus(canvasID);
+    break;
+    case 4:
+    //テキスト
+    
+    module.clearCanvas(canvasID);
+    break;
+    case 5:
+    //ポインタ
+    module.clearCanvas(canvasID);
     module.clearCanvas(canvasID);
     socket.json.emit('noticeClearPointerCanvas',{
       roomName:roomName,
@@ -504,7 +598,7 @@ function generateCanvas(canvasID,pageNum){
   var ectx2 = newElement2.getContext('2d');
 
   if(!userVideoColor[canvasID]){
-    userVideoColor[canvasID] = getUserColor();
+   //userVideoColor[canvasID] = getUserColor();
   }
 
   ectx1.strokeStyle=String(userVideoColor[canvasID]);
@@ -535,6 +629,41 @@ function generateCanvas(canvasID,pageNum){
       generateCanvas(canvasID,i);
       //setPdf2Canvas(i);
     }
+  }
+
+  function myColorSet(){
+
+    for(var i=1; i<=20;i++){
+      var targetD = canvasContainer[i].draw[myCanvasDrawID];
+      var targetP = canvasContainer[i].picture[myCanvasPictureID];
+      var tdc = targetD.getContext('2d');
+      var tdp = targetP.getContext('2d');
+      tdc.strokeStyle=String(myColor);
+      tdc.fillStyle=String(myColor);
+      tdp.strokeStyle=String(myColor);
+      tdp.fillStyle=String(myColor);
+    }
+    var pB = document.getElementById('pointerBox');
+    var dp = document.getElementById(myCanvasPointerID);
+    pB.removeChild(dp);
+    var newElement3 = document.createElement('canvas');
+
+
+  newElement3.id=myCanvasPointerID;
+
+  newElement3.width = pdfWidth+1000;
+
+  newElement3.height = pdfHeight;
+
+  newElement3.style.zIndex=3;
+
+  newElement3.style.position='absolute';
+  var nCtx = newElement3.getContext('2d');
+  nCtx.fillStyle=String(myColor);
+  nCtx.strokeStyle=String(myColor);
+  pointerBox.appendChild(newElement3);
+  drawTool.setEventListener(myCanvasPointerID);
+
   }
 
 
@@ -646,19 +775,47 @@ function onTextDrawed(message){
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
   drawTool.pushStatus(targetID);
-  //drawTool.drawCircle(targetID,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
-  //TODO drawTool.drawText();
+  drawTool.drawText(targetID,messageValue.txt,messageValue.cx,messageValue.cy);
 }
 
 function onAddCanvas(message){
   var canvasID = message.target.from;
   console.log(message.target.sendto);
-
-  drawTool.addCanvas(canvasID);
+  console.log('onAddCanvas');
+  //TODO mycolor and colors
   if(message.target.sendto ==null){
-
-    socket.emit('noticeAddCanvas',{roomName:roomName,sendto:message.target.from});
+     if(myColor ==null){
+       myColor = getUserColor();
+       usedUserColor(myColor);
+       localVideo.style.border="solid 3px "+myColor;
+       myColorSet();
+      }
+    socket.json.emit('noticeAddCanvas',{roomName:roomName,sendto:message.target.from,colorName:myColor,colors:userColors});
+  }else{
+    
+    console.log(message.body.value.colors);
+      userColors = message.body.value.colors;
+      if(myColor ==null){
+       myColor = getUserColor();
+       usedUserColor(myColor);
+       localVideo.style.border="solid 3px "+myColor;
+     myColorSet();
+      }
+      userVideoColor[canvasID] = message.body.value.colorName;
+      drawTool.addCanvas(canvasID);
+     
+      socket.json.emit('noticeColorSet',{roomName:roomName,sendto:message.target.from,colorName:myColor,colors:userColors});
   }
+
+}
+
+function onUserColorSet(message){
+  var canvasID = message.target.from;
+  userColors = message.body.value.colors;
+  userVideoColor[canvasID] = message.body.value.colorName;
+  console.log('on UserColorSet : '+canvasID);
+  drawTool.addCanvas(canvasID);
+
 }
 
 function onClearPointerCanvas(message){
@@ -688,7 +845,7 @@ PDFJS.getDocument('1DEX-6.pdf').then(function(pdf1) {
   pdf = pdf1;
   pdfSize = pdf.numPages;
   pdf.getPage(pdfIndex).then(function(page) {
-  // you can now use *page* here
+  // you can now use *page* her初期e
 
   var viewport = page.getViewport(scale);
 
@@ -1215,10 +1372,10 @@ $('#text_button').click(function(e){
   var myCanvasP = document.getElementById(myCanvasPointerID);
   var drawBox = document.getElementById('drawBox');
   var pointerBox = document.getElementById('pointerBox');
-  pointerBox.style.zIndex=3;
-  drawBox.style.zIndex=4;
-  myCanvasD.style.zIndex=4;
-  myCanvasP.style.zIndex=3;
+  pointerBox.style.zIndex=4;
+  drawBox.style.zIndex=3;
+  myCanvasD.style.zIndex=3;
+  myCanvasP.style.zIndex=4;
   myCanvasP.width= pdfWidth;
 
 });
@@ -1291,6 +1448,8 @@ $('#shoga_download_button').click(function(e){
 //全般的に初期化
 
 var setArr = new Array();
+
+
 for(var i = 1;i<=20;i++){
 
   var newElement1 = document.createElement('canvas');
@@ -1320,11 +1479,9 @@ for(var i = 1;i<=20;i++){
   canvasStatus[myCanvasDrawID+String(i)] = [];
   canvasContainer[i].picture[myCanvasPictureID]=newElement2;
     //module.setEventListener(canvasID)
-
-    //TODO イベントリスナーセット
     setArr.push(i);
 
-  }
+}
 
   setArr.forEach(function(value,index,arr){
     console.log('event set');
@@ -1345,6 +1502,7 @@ for(var i = 1;i<=20;i++){
   drawTool[myCanvasPointerID].oldPointX=null;
   drawTool[myCanvasPointerID].oldPointY=null;
 
+  drawTool.setEventListener(myCanvasDrawID+String(1));
 
 /**
  *
@@ -1441,7 +1599,8 @@ for(var i = 1;i<=20;i++){
 
   function generateItemWithId(id){
     if(!userVideoColor[id]){
-      userVideoColor[id] = getUserColor();
+      console.log('generateItemWithId');
+      //userVideoColor[id] = getUserColor();
     }
     var itemHtml = 
     '<video id="'+id+'"'+
@@ -1456,31 +1615,39 @@ for(var i = 1;i<=20;i++){
   }
 
   function getUserColor(){
-      userVideoCount = userVideoCount % MAX_CONNECTION_COUNT;//6
-      switch(userVideoCount++){
-        case 0:
-        return 'red';
-        break;
-        case 1:
-        return 'blue';
-        break;
-        case 2:
-        return 'green';
-        break;
-        case 3:
-        return 'gray';
-        break;
-        case 4:
-        return 'orange';
-        break;
-        case 5:
-        return 'purple';
-        break;
-        default:
-        return 'black';
-        break;
+      console.log(userColors);
+      var colors = shuffleArray(Object.keys(userColors));
+      var nC="";
+      for(var i = 0;i<colors.length;i++){
+        if(userColors[colors[i]] == true){
+          nC=colors[i];
+          userColors[colors[i]]=false;
+          break;
+        }
       }
+      usedUserColor(nC);
+      return nC;
     }
+
+  function shuffleArray(arr){
+      var nArr = arr;
+      var i = arr.length;
+    while(i){
+        var j = Math.floor(Math.random()*i);
+        var t = [--i];
+        nArr[i] = nArr[j];
+        nArr[j] = t;
+    }
+    return nArr;
+  }
+
+  function usedUserColor(colorName){
+        userColors[colorName]= false;
+  }
+
+  function unUsedUserColor(colorName){
+      userColors[colorName]=true;
+  }
 
 
     function attachVideo(id, stream) {
@@ -1680,6 +1847,7 @@ for(var i = 1;i<=20;i++){
       //stop();
 	     detachVideo(id); // force detach video
        stopConnection(id);
+    unUsedUserColor(userVideoColor[id]);
      }
    }
 

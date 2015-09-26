@@ -98,6 +98,14 @@ io.sockets.on('connection', function(socket) {
       emitMessage('syncCircle',sendObj)
   });
 
+  socket.on('noticeTextDrawed',function(message){
+      var sendObj={
+      body:{type:'syncText',value:message},
+      target:{from:socket.id,sendto:null,roomName:message.roomName}
+    }
+      emitMessage('syncText',sendObj)
+  });
+
   socket.on('noticePointerDrawed',function(message){
       var sendObj={
       body:{type:'syncPointer',value:message},
@@ -120,10 +128,25 @@ io.sockets.on('connection', function(socket) {
       target:{from:socket.id,sendto:message.sendto,roomName:message.roomName}
     }
       if(message.sendto){
-         io.sockets.to(message.sendto).emit('signaling', sendObj);
+         io.sockets.to(message.sendto).emit('addCanvas', sendObj);
+         return;
       }
       emitMessage('addCanvas',sendObj)
   });
+
+  socket.on('noticeColorSet',function(message){
+      var sendObj={
+      body:{type:'syncUserColor',value:message},
+      target:{from:socket.id,sendto:message.sendto,roomName:message.roomName}
+    }
+      if(message.sendto){
+         io.sockets.to(message.sendto).emit('syncUserColor', sendObj);
+         return;
+      }
+      emitMessage('syncUserColor',sendObj)
+  });
+
+
 
   socket.on('noticeBackCanvas',function(message){
       var sendObj={
@@ -140,7 +163,6 @@ io.sockets.on('connection', function(socket) {
     }
       emitMessage('syncPicture',sendObj)
   });
-
 
 
     socket.on('noticeNextPage',function(message){
