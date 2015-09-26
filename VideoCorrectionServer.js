@@ -133,6 +133,16 @@ io.sockets.on('connection', function(socket) {
       emitMessage('syncBackCanvas',sendObj)
   });
 
+  socket.on('noticePictureDrawed',function(message){
+      var sendObj={
+      body:{type:'syncPicture',value:message},
+      target:{from:socket.id,sendto:null,roomName:message.roomName}
+    }
+      emitMessage('syncPicture',sendObj)
+  });
+
+
+
     socket.on('noticeNextPage',function(message){
       var sendObj={
       body:{type:'pageNext',value:message},

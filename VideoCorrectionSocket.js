@@ -1,8 +1,8 @@
 $(function(){
   var socketReady = false;
   var port = 9001;
-  var socket = io.connect('http://133.68.112.180:' +  port + '/');
-  //var socket = io.connect('http://127.0.0.1:' + port + '/');
+  //var socket = io.connect('http://133.68.112.180:' +  port + '/');
+  var socket = io.connect('http://127.0.0.1:' + port + '/');
   //
   //
 
@@ -14,7 +14,7 @@ $(function(){
   var myCanvasDrawID='myCanvasDraw';
   var myCanvasPictureID='myCanvasPicture';
   var myCanvasPointerID='myCanvasPointer';
-  var canvasStatus=[];
+  var canvasStatus= {};
   var canvasContainer = new Array();
   var currentPageNumber;
   var pushing=false;
@@ -40,6 +40,8 @@ $(function(){
   .on('syncRect',onRectDrawed)
   .on('syncCircle',onCircleDrawed)
   .on('syncPointer',onPointerDrawed)
+  .on('syncPicture',onPictureDrawed)
+  .on('syncText',onTextDrawed)
   .on('addCanvas',onAddCanvas)
   .on('clearPointerCanvas',onClearPointerCanvas)
   .on('syncBackCanvas',onBackCanvas)
@@ -229,21 +231,24 @@ var drawTool = (function(){
     //TODO 自分の分と相手の分，どのように管理するのか
     //ans TODO 各ユーザごとにcanvasを追加する
     //
-    var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
-    canvasStatus.push(myContext.getImageData($('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID+String(pdfIndex)).offset().top,$('#'+myCanvasDrawID+String(pdfIndex)).width(),$('#'+myCanvasDrawID+String(pdfIndex)).height()));
+    var targetCanvas = document.getElementById(canvasID);
+    var targetContext = targetCanvas.getContext('2d');
+    console.log(targetCanvas.style.top);
+    console.log(targetCanvas.height);
+    canvasStatus[canvasID].push(targetContext.getImageData(targetCanvas.style.left,targetCanvas.style.top,targetCanvas.width,targetCanvas.height));
   };
 
 
   /**
     元の状態に戻す
     */
-    module.popStatus = function(){
-    //TODO 各ユーザごとにcanvasを持たせておき,対応するcanvasStatusをpopする
-    //
-    var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
-    var poped=canvasStatus.pop();
+    module.popStatus = function(canvasID){
+    
+    //var myContext = document.getElementById(myCanvasDrawID+String(pdfIndex)).getContext('2d');
+      var targetContext = document.getElementById(canvasID).getContext('2d');
+    var poped=canvasStatus[canvasID].pop();
     if(poped){
-     myContext.putImageData(poped,$('#'+myCanvasDrawID+String(pdfIndex)).offset().left,$('#'+myCanvasDrawID+String(pdfIndex)).offset().top);
+     targetContext.putImageData(poped,0,0);
    }
  };
 
@@ -317,7 +322,8 @@ $('#'+canvasID).mousedown(function(e){
       roomName:roomName,
       currentX:e.pageX-5,
       currentY:e.pageY-30,
-      mouseUp:false
+      mouseUp:false,
+      mouseDown:true
     });
     break;
     case 1:
@@ -360,7 +366,8 @@ $('#'+canvasID).mousemove(function(e){
       roomName:roomName,
       currentX:e.pageX-5,
       currentY:e.pageY-30,
-      mouseUp:false
+      mouseUp:false,
+      mouseDown:false
     });
     break;
     case 1:
@@ -400,7 +407,8 @@ $('#'+canvasID).mouseup(function(e){
       roomName:roomName,
       currentX:e.pageX-5,
       currentY:e.pageY-30,
-      mouseUp:true
+      mouseUp:true,
+      mouseDown:false
     });
     module.clearLocus(canvasID);
     if(canvasID == myCanvasDrawID+String(pdfIndex)){
@@ -507,7 +515,7 @@ function generateCanvas(canvasID,pageNum){
 
   canvasContainer[pageNum].draw[canvasID]=newElement1;
   canvasContainer[pageNum].picture[canvasID]=newElement2;
-
+  canvasStatus['canvasDraw'+canvasID+String(pageNum)] = [];
   drawTool['canvasDraw'+canvasID+String(pageNum)] = {};
   drawTool['canvasDraw'+canvasID+String(pageNum)].semiOldPointX=null;
   drawTool['canvasDraw'+canvasID+String(pageNum)].semiOldPointY=null;
@@ -575,6 +583,7 @@ function onLineDrawed(message){
 
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
+  drawTool.pushStatus(targetID);
   drawTool.drawLine(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
   drawTool.clearLocus(targetID);
 }
@@ -583,10 +592,14 @@ function onFreeDrawed(message){
   console.log('syncFreeDrawed from '+message.target.from);
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
+  
   drawTool.resDrawCurve(targetID,messageValue.currentX,messageValue.currentY);
 
   if(messageValue.mouseUp){
     drawTool.clearLocus(targetID);
+  }
+  if(messageValue.mouseDown){
+    drawTool.pushStatus(targetID);
   }
 }
 
@@ -594,6 +607,7 @@ function onRectDrawed(message){
   console.log('syncRectDrawed from '+message.target.from);
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
+  drawTool.pushStatus(targetID);
   drawTool.drawRect(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
   drawTool.clearLocus(targetID);
 }
@@ -602,6 +616,7 @@ function onCircleDrawed(message){
   console.log('syncCircleDrawed from '+message.target.from);
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
+  drawTool.pushStatus(targetID);
   drawTool.drawCircle(targetID,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
 }
 
@@ -612,6 +627,28 @@ function onPointerDrawed(message){
   drawTool.drawPointer(targetID,messageValue.cx,messageValue.cy,messageValue.ux,messageValue.uy);
 }
 
+function onPictureDrawed(message){
+  var targetID = 'canvasPicture'+message.target.from+String(pdfIndex);
+  var messageValue = message.body.value;
+  console.log(messageValue.picture);
+  drawTool.clearCanvas(targetID);
+  var targetCanvas = document.getElementById(targetID);
+  var targetContext = targetCanvas.getContext('2d');
+  var image = new Image();
+  image.onload=function(){
+      targetContext.drawImage(image,0,0);
+  }
+  image.src=messageValue.picture;
+}
+
+function onTextDrawed(message){
+  console.log('syncTextDrawed from '+message.target.from);
+  var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
+  var messageValue = message.body.value;
+  drawTool.pushStatus(targetID);
+  //drawTool.drawCircle(targetID,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
+  //TODO drawTool.drawText();
+}
 
 function onAddCanvas(message){
   var canvasID = message.target.from;
@@ -632,8 +669,8 @@ function onClearPointerCanvas(message){
 function onBackCanvas(message){
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
-      //drawTool.pop();
-    }
+      drawTool.popStatus(targetID);
+}
 
     function onPageNext(message){
       pdfNextPage();
@@ -646,7 +683,7 @@ function onBackCanvas(message){
 /*
 pdf初期呼び出し
 */
-PDFJS.getDocument('kyoshidatokai2015-983.pdf').then(function(pdf1) {
+PDFJS.getDocument('1DEX-6.pdf').then(function(pdf1) {
   // you can now use *pdf* here
   pdf = pdf1;
   pdfSize = pdf.numPages;
@@ -1059,7 +1096,7 @@ async.forEachSeries(ar,function(value,callback){
             if(err){
               console.error(err);
             }else{
-            //TODO addpage
+            
             //pdfOutputOne(editCanvas);
             var imgdata = editCanvas.toDataURL('image/png');
             //doc.save('sample.pdf');
@@ -1187,7 +1224,9 @@ $('#text_button').click(function(e){
 });
 $('#back_button').click(function(e){
   console.log('back');
-  drawTool.popStatus();
+  drawTool.popStatus(myCanvasDrawID+String(pdfIndex));
+  //TODO 同期
+  socket.json.emit('noticeBackCanvas',{roomName:roomName});
 });
 $('#next_button').click(function(e){
   console.log('back');
@@ -1278,6 +1317,7 @@ for(var i = 1;i<=20;i++){
     picture:{}
   }
   canvasContainer[i].draw[myCanvasDrawID]=newElement1;
+  canvasStatus[myCanvasDrawID+String(i)] = [];
   canvasContainer[i].picture[myCanvasPictureID]=newElement2;
     //module.setEventListener(canvasID)
 
@@ -1793,8 +1833,8 @@ function sendCandidate(candidate) {
 
   function setVideoVolume(id){
     var targetVideo = document.getElementById(id);
-    console.log(targetVideo);
-    console.log(id);
+   // console.log(targetVideo);
+   // console.log(id);
     var dist = euclidDist(id);
     if(dist<120){
       targetVideo.volume=1.0;
@@ -2012,7 +2052,7 @@ function setAnswer(evt) {
 
         chromaKey(canvas);
         
-      };
+  };
 
     // 消す色と閾値
     var chromaKeyColor = {r: 0, g: 255, b: 255},
@@ -2062,7 +2102,13 @@ function setAnswer(evt) {
 
         // 書き換えたdataをimageDataにもどし、描画する
         imageData.data = data;
+        
         context.putImageData(imageData, 0, 0);
+        socket.json.emit('noticePictureDrawed',{
+          roomName:roomName,
+          picture:canvas.toDataURL('image/png')
+        });
+
       };
 
     // r,g,bというkeyを持ったobjectが第一引数と第二引数に渡される想定
