@@ -1,8 +1,8 @@
 $(function(){
   var socketReady = false;
   var port = 9001;
-  var socket = io.connect('http://133.68.112.180:' +  port + '/');
-  //var socket = io.connect('http://127.0.0.1:' + port + '/');
+  //var socket = io.connect('http://133.68.112.180:' +  port + '/');
+  var socket = io.connect('http://127.0.0.1:' + port + '/');
   //
   //
 
@@ -70,7 +70,7 @@ $(function(){
 
     roomName = getRoomName(); // 会議室名を取得する
     socket.emit('enter', roomName);
-    socket.emit('noticeAddCanvas',{roomName:roomName,sendto:null,colors:userColors});
+    socket.json.emit('noticeAddCanvas',{roomName:roomName,sendto:null,colors:userColors});
     console.log('enter to ' + roomName);
   }
 
@@ -110,11 +110,12 @@ var drawTool = (function(){
   
   
 
-  module.drawCurve = function(canvasID,cx,cy){
+  module.drawCurve = function(canvasID,color,cx,cy){
    // module.drawPoint(ctx,cx,cy);
    if(module[canvasID].oldPointX && module[canvasID].semiOldPointX){
     var cav = document.getElementById(canvasID);
     ctx = cav.getContext('2d');
+    ctx.strokeStyle=String(color);
     ctx.beginPath();
     ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
     ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
@@ -129,13 +130,14 @@ var drawTool = (function(){
     }
   };
 
-  module.resDrawCurve = function(canvasID,cx,cy){
+  module.resDrawCurve = function(canvasID,color,cx,cy){
    // module.drawPoint(ctx,cx,cy);
 
    if(module[canvasID].oldPointX && module[canvasID].semiOldPointX){
     var cav = document.getElementById(canvasID);
 
     ctx = cav.getContext('2d');
+    ctx.strokeStyle=String(color);
     ctx.beginPath();
     ctx.moveTo((module[canvasID].oldPointX+module[canvasID].semiOldPointX)/2,(module[canvasID].oldPointY+module[canvasID].semiOldPointY)/2);
     ctx.quadraticCurveTo(module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,(module[canvasID].semiOldPointX+cx)/2,(module[canvasID].semiOldPointY+cy)/2);
@@ -150,19 +152,21 @@ var drawTool = (function(){
    }
  };
 
- module.drawPoint = function(canvasID,cx,cy){
+ module.drawPoint = function(canvasID,color,cx,cy){
   var cav = document.getElementById(canvasID);
   var ctx = cav.getContext('2d');
   ctx.beginPath();
+    ctx.strokeStyle=String(color);
   ctx.arc(cx,cy,5,0,Math.PI*2);
     //ctx.closePath();
     ctx.fill();
   };
 
-  module.drawLine = function(canvasID,cx1,cy1,cx2,cy2){
+  module.drawLine = function(canvasID,color,cx1,cy1,cx2,cy2){
     var cav = document.getElementById(canvasID);
     var ctx = cav.getContext('2d');
     ctx.beginPath();
+    ctx.strokeStyle=String(color);
     //ctx.moveTo(module.semiOldPointX,module.semiOldPointY);
     //ctx.lineTo(module.semiOldPointX,module.semiOldPointY,cx,cy);
     ctx.moveTo(cx1,cy1);
@@ -170,10 +174,11 @@ var drawTool = (function(){
     ctx.stroke();
   };
 
-  module.drawRect = function(canvasID,cx1,cy1,cx2,cy2){
+  module.drawRect = function(canvasID,color,cx1,cy1,cx2,cy2){
     var cav = document.getElementById(canvasID);
     var ctx = cav.getContext('2d');
     ctx.beginPath();
+    ctx.strokeStyle=String(color);
     ctx.moveTo(cx1,cy1);
     ctx.lineTo(cx1,cy2);
     ctx.lineTo(cx2,cy2);
@@ -182,22 +187,25 @@ var drawTool = (function(){
     ctx.stroke();
   };
 
-  module.drawCircle = function(canvasID,cx1,cy1,cx2,cy2){
+  module.drawCircle = function(canvasID,color,cx1,cy1,cx2,cy2){
     var cav = document.getElementById(canvasID);
     var ctx = cav.getContext('2d');
+    ctx.strokeStyle=String(color);
     ctx.beginPath();
     ctx.arc((cx1+cx2)/2,(cy1+cy2)/2,
       Math.sqrt((cx1-cx2)*(cx1-cx2)+(cy1-cy2)*(cy1-cy2))/2,0,Math.PI*2,true);
     ctx.stroke();
   }
 
-  module.drawPointer = function(canvasID,cx,cy,ux,uy){
+  module.drawPointer = function(canvasID,color,cx,cy,ux,uy){
     //ux,uyにはつなぐ点四角の左側の中央の座標を入れる
     var cav = document.getElementById(canvasID);
     var ctx = cav.getContext('2d');
     console.log(cav);
 
     //ctx.strokeRect(ux-5,uy-95,250,190);
+    
+    ctx.strokeStyle=String(color);
     ctx.beginPath();
     ctx.moveTo(ux-5,uy);
     ctx.lineTo(cx,cy);
@@ -216,9 +224,11 @@ var drawTool = (function(){
     ctx.stroke();
   }
 
-  module.drawText = function(canvasID,txt,cx,cy){
+  module.drawText = function(canvasID,color,txt,cx,cy){
       var cav = document.getElementById(canvasID);
       var ctx = cav.getContext('2d');
+    ctx.strokeStyle=String(color);
+    ctx.fillStyle=String(color);
       
       ctx.font = 'normal normal 15px Century Gothic';
       ctx.textAlign = 'center';
@@ -336,16 +346,19 @@ var drawTool = (function(){
 */
 $('#'+canvasID).mousedown(function(e){
   pushing=true;
+  if(module.mode != 5){
   module.pushStatus(canvasID);
+}
   console.log('mouseDown');
   switch(module.mode){
     case 0:
     //自由
     //var canvas = document.getElementById('the-canvas');
     //var ctx = canvas.getContext('2d');
-    module.drawCurve(canvasID,e.pageX-5,e.pageY-30);
+    module.drawCurve(canvasID,myColor,e.pageX-5,e.pageY-30);
     socket.json.emit('noticeFreeDrawed',{
       roomName:roomName,
+      color:myColor,
       currentX:e.pageX-5,
       currentY:e.pageY-30,
       mouseUp:false,
@@ -370,9 +383,10 @@ $('#'+canvasID).mousedown(function(e){
     case 5:
     //ポインタ
     module.clearCanvas(canvasID);
-    module.drawPointer(canvasID,e.pageX-5,e.pageY-30,$('#local-video').offset().left-10,$('#local-video').offset().top+90-40);
+    module.drawPointer(canvasID,myColor,e.pageX-5,e.pageY-30,$('#local-video').offset().left-10,$('#local-video').offset().top+90-40);
     socket.json.emit('noticePointerDrawed',{
       roomName:roomName,
+      color:myColor,
       cx:e.pageX-5,
       cy:e.pageY-30,
       ux:$('#local-video').offset().left-10,
@@ -387,9 +401,10 @@ $('#'+canvasID).mousemove(function(e){
    switch(module.mode){
     case 0:
     //自由
-    module.drawCurve(canvasID,e.pageX-5,e.pageY-30);
+    module.drawCurve(canvasID,myColor,e.pageX-5,e.pageY-30);
     socket.json.emit('noticeFreeDrawed',{
       roomName:roomName,
+      color:myColor,
       currentX:e.pageX-5,
       currentY:e.pageY-30,
       mouseUp:false,
@@ -409,14 +424,15 @@ $('#'+canvasID).mousemove(function(e){
     //テキスト
     //TODO 表示
     module.clearCanvas(canvasID);
-    module.drawText(canvasID,document.getElementById('text_box').value,e.pageX-5,e.pageY-30);
+    module.drawText(canvasID,myColor,document.getElementById('text_box').value,e.pageX-5,e.pageY-30);
     break;
     case 5:
     //ポインタ
     module.clearCanvas(canvasID);
-    module.drawPointer(canvasID,e.pageX-5,e.pageY-30,$('#local-video').offset().left-10,$('#local-video').offset().top+90-40);
+    module.drawPointer(canvasID,myColor,e.pageX-5,e.pageY-30,$('#local-video').offset().left-10,$('#local-video').offset().top+90-40);
     socket.json.emit('noticePointerDrawed',{
       roomName:roomName,
+      color:myColor,
       cx:e.pageX-5,
       cy:e.pageY-30,
       ux:$('#local-video').offset().left-10,
@@ -431,9 +447,10 @@ $('#'+canvasID).mouseup(function(e){
   switch(module.mode){
     case 0:
     //自由
-    module.drawCurve(canvasID,e.pageX-5,e.pageY-30);
+    module.drawCurve(canvasID,myColor,e.pageX-5,e.pageY-30);
     socket.json.emit('noticeFreeDrawed',{
       roomName:roomName,
+      color:myColor,
       currentX:e.pageX-5,
       currentY:e.pageY-30,
       mouseUp:true,
@@ -446,9 +463,10 @@ $('#'+canvasID).mouseup(function(e){
     break;
     case 1:
     //線
-    module.drawLine(canvasID,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX-5,e.pageY-30);
+    module.drawLine(canvasID,myColor,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX-5,e.pageY-30);
     socket.json.emit('noticeLineDrawed',{
       roomName:roomName,
+      color:myColor,
       startX:module[canvasID].semiOldPointX,
       startY:module[canvasID].semiOldPointY,
       endX:e.pageX-5,
@@ -458,9 +476,10 @@ $('#'+canvasID).mouseup(function(e){
     break;
     case 2:
     //四角
-    module.drawRect(canvasID,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX-5,e.pageY-30);
+    module.drawRect(canvasID,myColor,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY,e.pageX-5,e.pageY-30);
     socket.json.emit('noticeRectDrawed',{
       roomName:roomName,
+      color:myColor,
       startX:module[canvasID].semiOldPointX,
       startY:module[canvasID].semiOldPointY,
       endX:e.pageX-5,
@@ -470,10 +489,11 @@ $('#'+canvasID).mouseup(function(e){
     break;
     case 3:
     //円
-    module.drawCircle(canvasID,e.pageX-5,e.pageY-30,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY);
+    module.drawCircle(canvasID,myColor,e.pageX-5,e.pageY-30,module[canvasID].semiOldPointX,module[canvasID].semiOldPointY);
     
     socket.json.emit('noticeCircleDrawed',{
       roomName:roomName,
+      color:myColor,
       cx1:e.pageX-5,
       cy1:e.pageY-30,
       cx2:module[canvasID].semiOldPointX,
@@ -487,9 +507,10 @@ $('#'+canvasID).mouseup(function(e){
     console.log(targetCanvasID);
 
     module.pushStatus(targetCanvasID);
-    module.drawText(targetCanvasID,document.getElementById('text_box').value,e.pageX-5,e.pageY-30);
+    module.drawText(targetCanvasID,myColor,document.getElementById('text_box').value,e.pageX-5,e.pageY-30);
     socket.json.emit('noticeTextDrawed',{
       roomName:roomName,
+      color:myColor,
       cx:e.pageX-5,
       cy:e.pageY-30,
       txt:document.getElementById('text_box').value
@@ -500,6 +521,7 @@ $('#'+canvasID).mouseup(function(e){
     module.clearCanvas(canvasID);
     socket.json.emit('noticeClearPointerCanvas',{
       roomName:roomName,
+      color:myColor,
       cx:e.pageX-5,
       cy:e.pageY-30,
       ux:$('#local-video').offset().left-10,
@@ -517,11 +539,12 @@ $('#'+canvasID).mouseout(function(e){
     //自由
     //var canvas = document.getElementById('the-canvas');
     //var ctx = canvas.getContext('2d');
-    module.drawCurve(canvasID,e.pageX-5,e.pageY-30);
+    module.drawCurve(canvasID,myColor,e.pageX-5,e.pageY-30);
 
     module.clearLocus(canvasID);
     socket.json.emit('noticeFreeDrawed',{
       roomName:roomName,
+      color:myColor,
       currentX:e.pageX-5,
       currentY:e.pageY-30,
       mouseUp:true,
@@ -555,6 +578,7 @@ $('#'+canvasID).mouseout(function(e){
     module.clearCanvas(canvasID);
     socket.json.emit('noticeClearPointerCanvas',{
       roomName:roomName,
+      color:myColor,
       cx:e.pageX-5,
       cy:e.pageY-30,
       ux:$('#local-video').offset().left-10,
@@ -658,10 +682,13 @@ function generateCanvas(canvasID,pageNum){
   newElement3.style.zIndex=3;
 
   newElement3.style.position='absolute';
+  
+  pointerBox.appendChild(newElement3);
+
   var nCtx = newElement3.getContext('2d');
   nCtx.fillStyle=String(myColor);
   nCtx.strokeStyle=String(myColor);
-  pointerBox.appendChild(newElement3);
+  console.log()
   drawTool.setEventListener(myCanvasPointerID);
 
   }
@@ -704,7 +731,7 @@ function getRoomName() { // たとえば、 URLに  ?roomname  とする
 }
 
 function onNewCanvas(message){
-  socket.emit('noticeAddCanvas',{roomName:roomName});
+  socket.json.emit('noticeAddCanvas',{roomName:roomName});
 }
 
 function onLineDrawed(message){
@@ -713,7 +740,7 @@ function onLineDrawed(message){
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
   drawTool.pushStatus(targetID);
-  drawTool.drawLine(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
+  drawTool.drawLine(targetID,messageValue.color,messageValue.color,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
   drawTool.clearLocus(targetID);
 }
 
@@ -722,8 +749,8 @@ function onFreeDrawed(message){
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
   
-  drawTool.resDrawCurve(targetID,messageValue.currentX,messageValue.currentY);
-
+  drawTool.resDrawCurve(targetID,messageValue.color,messageValue.currentX,messageValue.currentY);
+  
   if(messageValue.mouseUp){
     drawTool.clearLocus(targetID);
   }
@@ -737,7 +764,7 @@ function onRectDrawed(message){
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
   drawTool.pushStatus(targetID);
-  drawTool.drawRect(targetID,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
+  drawTool.drawRect(targetID,messageValue.color,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
   drawTool.clearLocus(targetID);
 }
 
@@ -746,14 +773,14 @@ function onCircleDrawed(message){
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
   drawTool.pushStatus(targetID);
-  drawTool.drawCircle(targetID,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
+  drawTool.drawCircle(targetID,messageValue.color,messageValue.cx1,messageValue.cy1,messageValue.cx2,messageValue.cy2)
 }
 
 function onPointerDrawed(message){
   var targetID = 'canvasPointer'+message.target.from;
   var messageValue = message.body.value;
   drawTool.clearCanvas(targetID);
-  drawTool.drawPointer(targetID,messageValue.cx,messageValue.cy,messageValue.ux,messageValue.uy);
+  drawTool.drawPointer(targetID,messageValue.color,messageValue.cx,messageValue.cy,messageValue.ux,messageValue.uy);
 }
 
 function onPictureDrawed(message){
@@ -775,7 +802,7 @@ function onTextDrawed(message){
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
   drawTool.pushStatus(targetID);
-  drawTool.drawText(targetID,messageValue.txt,messageValue.cx,messageValue.cy);
+  drawTool.drawText(targetID,messageValue.color,messageValue.txt,messageValue.cx,messageValue.cy);
 }
 
 function onAddCanvas(message){
@@ -788,7 +815,7 @@ function onAddCanvas(message){
        myColor = getUserColor();
        usedUserColor(myColor);
        localVideo.style.border="solid 3px "+myColor;
-       myColorSet();
+       //myColorSet();
       }
     socket.json.emit('noticeAddCanvas',{roomName:roomName,sendto:message.target.from,colorName:myColor,colors:userColors});
   }else{
@@ -799,7 +826,7 @@ function onAddCanvas(message){
        myColor = getUserColor();
        usedUserColor(myColor);
        localVideo.style.border="solid 3px "+myColor;
-     myColorSet();
+    // myColorSet();
       }
       userVideoColor[canvasID] = message.body.value.colorName;
       drawTool.addCanvas(canvasID);
@@ -1562,7 +1589,7 @@ for(var i = 1;i<=20;i++){
       left:$('#local-video').offset().left,
       roomName:roomName
     }
-    socket.emit('changeVideoPosition',sendObj);
+    socket.json.emit('changeVideoPosition',sendObj);
     setAllVideoVolume();
   }
 
@@ -1609,7 +1636,7 @@ for(var i = 1;i<=20;i++){
     $('#item_area').append(itemHtml);
     var elm = document.getElementById(id);
     elm.style.border = '3px solid '+userVideoColor[id];
-    socket.emit('initializeVideoPosition',{roomName:roomName});
+    socket.json.emit('initializeVideoPosition',{roomName:roomName});
     //$('#'+id).draggable();
     return document.getElementById(id);
   }
