@@ -1,8 +1,8 @@
 $(function(){
   var socketReady = false;
   var port = 9001;
-  //var socket = io.connect('http://133.68.112.180:' +  port + '/');
-  var socket = io.connect('http://127.0.0.1:' + port + '/');
+  var socket = io.connect('http://133.68.112.180:' +  port + '/');
+  //var socket = io.connect('http://127.0.0.1:' + port + '/');
   //
   //
 
@@ -23,11 +23,11 @@ $(function(){
   var userColors = {
     red:true,
     blue:true,
-    yellow:true,
+    orange:true,
     lime:true,
     violet:true,
     cyan:true,
-    orangered:true
+    purple:true
   };
 
   var myColor = null;
@@ -740,7 +740,7 @@ function onLineDrawed(message){
   var targetID = 'canvasDraw'+message.target.from+String(pdfIndex);
   var messageValue = message.body.value;
   drawTool.pushStatus(targetID);
-  drawTool.drawLine(targetID,messageValue.color,messageValue.color,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
+  drawTool.drawLine(targetID,messageValue.color,messageValue.startX,messageValue.startY,messageValue.endX,messageValue.endY);
   drawTool.clearLocus(targetID);
 }
 
@@ -867,7 +867,7 @@ function onBackCanvas(message){
 /*
 pdf初期呼び出し
 */
-PDFJS.getDocument('1DEX-6.pdf').then(function(pdf1) {
+PDFJS.getDocument('kyoshida.pdf').then(function(pdf1) {
   // you can now use *pdf* here
   pdf = pdf1;
   pdfSize = pdf.numPages;
@@ -1528,6 +1528,11 @@ for(var i = 1;i<=20;i++){
   drawTool[myCanvasPointerID].semiOldPointY=null;
   drawTool[myCanvasPointerID].oldPointX=null;
   drawTool[myCanvasPointerID].oldPointY=null;
+
+  var dBox = document.getElementById('drawBox');
+  var pBox = document.getElementById('pictureBox');
+  dBox.appendChild(canvasContainer[1].draw[myCanvasDrawID]);
+  pBox.appendChild(canvasContainer[1].picture[myCanvasPictureID]);
 
   drawTool.setEventListener(myCanvasDrawID+String(1));
 
@@ -2276,6 +2281,7 @@ function setAnswer(evt) {
           
             // chromaKeyColorと現在のピクセルの三次元空間上の距離を閾値と比較する
             // 閾値より小さい（色が近い）場合、そのピクセルを消す
+            /*
             if (getColorDistance(chromaKeyColor, target) < colorDistance) {
                 // alpha値を0にすることで見えなくする
                 data[i + 3] = 0;
@@ -2284,7 +2290,7 @@ function setAnswer(evt) {
               if(target.r >= (target.g+target.b)){
                 data[i+3]=0;
               }
-
+          */
 
 
               var hsv = rgb_to_hsv([target.r,target.g,target.b]);
@@ -2326,7 +2332,7 @@ function setAnswer(evt) {
         var flagS=false;
         var flagV=false;
   //閾値は独自設定
-  if((0<=h && h<=20) || (340<=h && h<=360)){
+  if((0<=h && h<=20) || (330<=h && h<=360)){
     flagH=true;
   }
   if(40 <= s){

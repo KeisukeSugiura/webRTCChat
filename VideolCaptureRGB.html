@@ -69,19 +69,21 @@
             
             // chromaKeyColorと現在のピクセルの三次元空間上の距離を閾値と比較する
             // 閾値より小さい（色が近い）場合、そのピクセルを消す
+            // 
+            /*
             if (getColorDistance(chromaKeyColor, target) < colorDistance) {
                 // alpha値を0にすることで見えなくする
                 data[i + 3] = 0;
             }
+            */
+			
+			
             
-			
-			
-            /*
 			var hsv = rgb_to_hsv([target.r,target.g,target.b]);
 			if(isHSVonRED(hsv)){
 				data[i+3]=0;
 			}
-			*/
+			
 
 
         }
